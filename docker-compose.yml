@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  # Backend API Service
+  tradebot-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tradebot-api
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TRADEBOT_API_KEY=your_api_key_here
+      - TRADEBOT_ENV=development
+    restart: unless-stopped
+    networks:
+      - tradebot-network
+
+  # Frontend Service
+  tradebot-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tradebot-frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "8080:8080"
+    environment:
+      - VUE_APP_API_URL=http://localhost:8000/api
+    depends_on:
+      - tradebot-api
+    restart: unless-stopped
+    networks:
+      - tradebot-network
+
+networks:
+  tradebot-network:
+    driver: bridge
+
+volumes:
+  data:
+  logs:
+  models:

@@ -7,6 +7,16 @@
       </div>
     </header>
 
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Daten werden geladen...</div>
+    </div>
+
+    <div v-if="globalError" class="error-message">
+      {{ globalError }}
+      <button @click="dismissError" class="dismiss-button">×</button>
+    </div>
+
     <div class="main-content">
       <div class="sidebar">
         <nav>
@@ -36,7 +46,7 @@
 
             <div class="stat-card">
               <h3>Gewinn/Verlust Heute</h3>
-              <div class="stat-value" :class="{ positive: stats.daily_profit_loss > 0, negative: stats.daily_profit_loss < 0 }">
+              <div class="stat-value" :class="{ positive: (stats.daily_profit_loss || 0) > 0, negative: (stats.daily_profit_loss || 0) < 0 }">
                 {{ stats.daily_profit_loss ? stats.daily_profit_loss.toFixed(2) + '%' : '0.00%' }}
               </div>
             </div>
@@ -72,6 +82,7 @@
             <div class="form-group">
               <label for="prediction-symbol">Symbol</label>
               <input type="text" id="prediction-symbol" v-model="predictionForm.symbol" placeholder="z.B. BTC-USDT">
+              <div v-if="errors.predictionSymbol" class="error-hint">{{ errors.predictionSymbol }}</div>
             </div>
 
             <div class="form-group">
@@ -83,7 +94,13 @@
               </select>
             </div>
 
-            <button @click="makePrediction" class="primary-button">Prognose erstellen</button>
+            <button @click="makePrediction" class="primary-button" :disabled="loading.prediction">
+              {{ loading.prediction ? 'Wird berechnet...' : 'Prognose erstellen' }}
+            </button>
+          </div>
+
+          <div v-if="errors.prediction" class="error-box">
+            {{ errors.prediction }}
           </div>
 
           <div v-if="latestPrediction" class="prediction-result">
@@ -134,8 +151,9 @@
               <div class="prediction-actions">
                 <button @click="executeTrade(latestPrediction.symbol, latestPrediction.direction === 'up' ? 'buy' : 'sell')"
                         class="action-button"
-                        :class="{ 'buy-button': latestPrediction.direction === 'up', 'sell-button': latestPrediction.direction === 'down' }">
-                  {{ latestPrediction.direction === 'up' ? 'Kaufen' : 'Verkaufen' }}
+                        :class="{ 'buy-button': latestPrediction.direction === 'up', 'sell-button': latestPrediction.direction === 'down' }"
+                        :disabled="loading.trade">
+                  {{ loading.trade ? 'Wird ausgeführt...' : (latestPrediction.direction === 'up' ? 'Kaufen' : 'Verkaufen') }}
                 </button>
               </div>
             </div>
@@ -177,11 +195,11 @@
                 <div class="trade-cell" :class="{ 'buy': trade.action === 'buy', 'sell': trade.action === 'sell' }">
                   {{ trade.action.toUpperCase() }}
                 </div>
-                <div class="trade-cell">{{ trade.price.toFixed(2) }}</div>
-                <div class="trade-cell">{{ trade.amount.toFixed(2) }}</div>
+                <div class="trade-cell">{{ trade.price ? trade.price.toFixed(2) : '0.00' }}</div>
+                <div class="trade-cell">{{ trade.amount ? trade.amount.toFixed(2) : '0.00' }}</div>
                 <div class="trade-cell">{{ formatTime(trade.timestamp) }}</div>
-                <div class="trade-cell">{{ trade.stop_loss.toFixed(2) }}</div>
-                <div class="trade-cell">{{ trade.take_profit.toFixed(2) }}</div>
+                <div class="trade-cell">{{ trade.stop_loss ? trade.stop_loss.toFixed(2) : '0.00' }}</div>
+                <div class="trade-cell">{{ trade.take_profit ? trade.take_profit.toFixed(2) : '0.00' }}</div>
               </div>
             </div>
           </div>
@@ -207,10 +225,10 @@
                 <div class="trade-cell" :class="{ 'buy': trade.action === 'buy', 'sell': trade.action === 'sell' }">
                   {{ trade.action.toUpperCase() }}
                 </div>
-                <div class="trade-cell">{{ trade.price.toFixed(2) }}</div>
-                <div class="trade-cell">{{ trade.close_price.toFixed(2) }}</div>
+                <div class="trade-cell">{{ trade.price ? trade.price.toFixed(2) : '0.00' }}</div>
+                <div class="trade-cell">{{ trade.close_price ? trade.close_price.toFixed(2) : '0.00' }}</div>
                 <div class="trade-cell" :class="{ 'positive': trade.profit_loss > 0, 'negative': trade.profit_loss < 0 }">
-                  {{ trade.profit_loss.toFixed(2) }}%
+                  {{ trade.profit_loss ? trade.profit_loss.toFixed(2) : '0.00' }}%
                 </div>
                 <div class="trade-cell">{{ formatCloseReason(trade.close_reason) }}</div>
                 <div class="trade-cell">{{ formatTime(trade.close_time) }}</div>
@@ -228,6 +246,7 @@
             <div class="form-group">
               <label for="job-symbol">Symbol</label>
               <input type="text" id="job-symbol" v-model="jobForm.symbol" placeholder="z.B. BTC-USDT">
+              <div v-if="errors.jobSymbol" class="error-hint">{{ errors.jobSymbol }}</div>
             </div>
 
             <div class="form-group">
@@ -241,7 +260,13 @@
               </select>
             </div>
 
-            <button @click="addJob" class="primary-button">Job hinzufügen</button>
+            <button @click="addJob" class="primary-button" :disabled="loading.addJob">
+              {{ loading.addJob ? 'Wird hinzugefügt...' : 'Job hinzufügen' }}
+            </button>
+          </div>
+
+          <div v-if="errors.jobs" class="error-box">
+            {{ errors.jobs }}
           </div>
 
           <div class="job-list">
@@ -266,7 +291,9 @@
                 <div class="job-cell">{{ job.interval }} {{ job.unit }}</div>
                 <div class="job-cell">{{ job.next_run }}</div>
                 <div class="job-cell">
-                  <button @click="removeJob(job.id)" class="delete-button">Löschen</button>
+                  <button @click="removeJob(job.id)" class="delete-button" :disabled="loading.removeJob === job.id">
+                    {{ loading.removeJob === job.id ? 'Wird gelöscht...' : 'Löschen' }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -290,12 +317,12 @@
 
             <div class="form-group">
               <label for="max-trades-day">Maximale Trades pro Tag</label>
-              <input type="number" id="max-trades-day" v-model="settings.trader.max_trades_per_day" min="1" max="50">
+              <input type="number" id="max-trades-day" v-model.number="settings.trader.max_trades_per_day" min="1" max="50">
             </div>
 
             <div class="form-group">
               <label for="trade-amount">Betrag pro Trade</label>
-              <input type="number" id="trade-amount" v-model="settings.trader.trade_amount" min="1">
+              <input type="number" id="trade-amount" v-model.number="settings.trader.trade_amount" min="1">
             </div>
           </div>
 
@@ -304,17 +331,17 @@
 
             <div class="form-group">
               <label for="stop-loss">Stop-Loss (%)</label>
-              <input type="number" id="stop-loss" v-model="settings.trader.stop_loss_pct" min="0.1" max="10" step="0.1">
+              <input type="number" id="stop-loss" v-model.number="settings.trader.stop_loss_pct" min="0.1" max="10" step="0.1">
             </div>
 
             <div class="form-group">
               <label for="take-profit">Take-Profit (%)</label>
-              <input type="number" id="take-profit" v-model="settings.trader.take_profit_pct" min="0.1" max="20" step="0.1">
+              <input type="number" id="take-profit" v-model.number="settings.trader.take_profit_pct" min="0.1" max="20" step="0.1">
             </div>
 
             <div class="form-group">
               <label for="max-risk">Maximales Risiko pro Trade (%)</label>
-              <input type="number" id="max-risk" v-model="settings.trader.risk_management.max_risk_per_trade" min="0.1" max="10" step="0.1">
+              <input type="number" id="max-risk" v-model.number="settings.trader.risk_management.max_risk_per_trade" min="0.1" max="10" step="0.1">
             </div>
           </div>
 
@@ -332,17 +359,17 @@
 
             <div class="form-group">
               <label for="prediction-horizon">Prognosehorizont (Stunden)</label>
-              <input type="number" id="prediction-horizon" v-model="settings.model.prediction_horizon" min="1" max="24">
+              <input type="number" id="prediction-horizon" v-model.number="settings.model.prediction_horizon" min="1" max="24">
             </div>
 
             <div class="form-group">
               <label for="confidence-threshold">Vertrauensschwelle</label>
-              <input type="number" id="confidence-threshold" v-model="settings.trader.confidence_threshold" min="0.1" max="1" step="0.05">
+              <input type="number" id="confidence-threshold" v-model.number="settings.trader.confidence_threshold" min="0.1" max="1" step="0.05">
             </div>
 
             <div class="form-group">
               <label for="min-change">Minimale Änderung für Trade (%)</label>
-              <input type="number" id="min-change" v-model="settings.trader.min_change_pct" min="0.1" max="5" step="0.1">
+              <input type="number" id="min-change" v-model.number="settings.trader.min_change_pct" min="0.1" max="5" step="0.1">
             </div>
           </div>
 
@@ -368,8 +395,14 @@
             </div>
           </div>
 
+          <div v-if="errors.settings" class="error-box">
+            {{ errors.settings }}
+          </div>
+
           <div class="settings-actions">
-            <button @click="saveSettings" class="primary-button">Einstellungen speichern</button>
+            <button @click="saveSettings" class="primary-button" :disabled="loading.settings">
+              {{ loading.settings ? 'Wird gespeichert...' : 'Einstellungen speichern' }}
+            </button>
           </div>
         </div>
       </div>
@@ -378,6 +411,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 import Chart from 'chart.js/auto';
 
 export default {
@@ -428,15 +462,53 @@ export default {
           model_type: 'random_forest',
           prediction_horizon: 1
         }
-      }
-    }
+      },
+
+      // API-Request-Status
+      loading: {
+        status: false,
+        stats: false,
+        jobs: false,
+        trades: false,
+        prediction: false,
+        settings: false,
+        trade: false,
+        addJob: false,
+        removeJob: null
+      },
+
+      // Fehlermeldungen
+      errors: {
+        status: null,
+        stats: null,
+        jobs: null,
+        trades: null,
+        prediction: null,
+        settings: null,
+        predictionSymbol: null,
+        jobSymbol: null
+      },
+
+      // Globaler Fehler
+      globalError: null,
+
+      // Timer für automatische Aktualisierung
+      updateTimer: null
+    };
   },
 
   created() {
     this.loadData();
 
     // Daten periodisch aktualisieren
-    setInterval(this.loadData, 30000);
+    this.updateTimer = setInterval(this.loadData, 30000);
+  },
+
+  beforeUnmount() {
+    // Timer stoppen, wenn die Komponente zerstört wird
+    if (this.updateTimer) {
+      clearInterval(this.updateTimer);
+    }
   },
 
   mounted() {
@@ -444,6 +516,13 @@ export default {
     this.$nextTick(() => {
       this.initPerformanceChart();
     });
+  },
+
+  computed: {
+    isLoading() {
+      // Prüfen, ob irgendein Ladevorgang aktiv ist
+      return Object.values(this.loading).some(status => status === true);
+    }
   },
 
   methods: {
@@ -456,188 +535,218 @@ export default {
     },
 
     async loadStatus() {
+      this.loading.status = true;
+      this.errors.status = null;
+
       try {
-        const response = await fetch('/api/status');
-        const data = await response.json();
-        this.isActive = data.status === 'running';
+        const response = await axios.get('/api/status');
+        this.isActive = response.data.status === 'running';
       } catch (error) {
+        this.errors.status = `Fehler beim Laden des Status: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Laden des Status:', error);
+      } finally {
+        this.loading.status = false;
       }
     },
 
     async loadStats() {
+      this.loading.stats = true;
+      this.errors.stats = null;
+
       try {
-        const response = await fetch('/api/stats');
-        this.stats = await response.json();
+        const response = await axios.get('/api/stats');
+        this.stats = response.data;
       } catch (error) {
+        this.errors.stats = `Fehler beim Laden der Statistiken: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Laden der Statistiken:', error);
+      } finally {
+        this.loading.stats = false;
       }
     },
 
     async loadJobs() {
+      this.loading.jobs = true;
+      this.errors.jobs = null;
+
       try {
-        const response = await fetch('/api/jobs');
-        const data = await response.json();
-        this.jobs = data.jobs;
+        const response = await axios.get('/api/jobs');
+        this.jobs = response.data.jobs || [];
       } catch (error) {
+        this.errors.jobs = `Fehler beim Laden der Jobs: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Laden der Jobs:', error);
+      } finally {
+        this.loading.jobs = false;
       }
     },
 
     async loadTrades() {
+      this.loading.trades = true;
+      this.errors.trades = null;
+
       try {
         // Offene Trades laden
-        const openResponse = await fetch('/api/trades?status=open');
-        const openData = await openResponse.json();
-        this.openTrades = openData.trades;
+        const openResponse = await axios.get('/api/trades?status=open');
+        this.openTrades = openResponse.data.trades || [];
 
         // Geschlossene Trades laden
-        const closedResponse = await fetch('/api/trades?status=closed');
-        const closedData = await closedResponse.json();
-        this.closedTrades = closedData.trades;
+        const closedResponse = await axios.get('/api/trades?status=closed');
+        this.closedTrades = closedResponse.data.trades || [];
       } catch (error) {
+        this.errors.trades = `Fehler beim Laden der Trades: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Laden der Trades:', error);
+      } finally {
+        this.loading.trades = false;
       }
     },
 
     async loadSettings() {
-      try {
-        const response = await fetch('/api/config');
-        const data = await response.json();
+      this.loading.settings = true;
+      this.errors.settings = null;
 
-        if (data.model_config) {
-          this.settings.model = data.model_config;
+      try {
+        const response = await axios.get('/api/config');
+
+        if (response.data.model_config) {
+          this.settings.model = response.data.model_config;
         }
 
-        if (data.trader_config) {
-          this.settings.trader = data.trader_config;
+        if (response.data.trader_config) {
+          this.settings.trader = response.data.trader_config;
         }
       } catch (error) {
+        this.errors.settings = `Fehler beim Laden der Einstellungen: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Laden der Einstellungen:', error);
+      } finally {
+        this.loading.settings = false;
       }
     },
 
     async makePrediction() {
-      try {
-        const response = await fetch('/api/predict', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.predictionForm)
-        });
+      // Formularvalidierung
+      this.errors.predictionSymbol = null;
+      this.errors.prediction = null;
 
-        const data = await response.json();
-        this.latestPrediction = data;
+      if (!this.predictionForm.symbol || this.predictionForm.symbol.trim() === '') {
+        this.errors.predictionSymbol = 'Bitte geben Sie ein Symbol ein';
+        return;
+      }
+
+      this.loading.prediction = true;
+
+      try {
+        const response = await axios.post('/api/predict', this.predictionForm);
+        this.latestPrediction = response.data;
       } catch (error) {
+        this.errors.prediction = `Fehler bei der Prognose: ${this.getErrorMessage(error)}`;
         console.error('Fehler bei der Prognose:', error);
-        alert('Fehler bei der Prognose: ' + error.message);
+      } finally {
+        this.loading.prediction = false;
       }
     },
 
     async executeTrade(symbol, action) {
+      this.loading.trade = true;
+      this.globalError = null;
+
       try {
-        const response = await fetch('/api/trade', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            symbol: symbol,
-            action: action
-          })
+        const response = await axios.post('/api/trade', {
+          symbol: symbol,
+          action: action
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-          alert(`Trade erfolgreich ausgeführt: ${action.toUpperCase()} ${symbol}`);
+        if (response.data.success) {
+          // Erfolgsmeldung
+          this.globalError = `Trade erfolgreich ausgeführt: ${action.toUpperCase()} ${symbol}`;
+          // Trades neu laden
           this.loadTrades();
         } else {
-          alert(`Fehler beim Ausführen des Trades: ${data.reason}`);
+          this.globalError = `Fehler beim Ausführen des Trades: ${response.data.reason || 'Unbekannter Fehler'}`;
         }
       } catch (error) {
+        this.globalError = `Fehler beim Ausführen des Trades: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Ausführen des Trades:', error);
-        alert('Fehler beim Ausführen des Trades: ' + error.message);
+      } finally {
+        this.loading.trade = false;
       }
     },
 
     async addJob() {
+      // Formularvalidierung
+      this.errors.jobSymbol = null;
+      this.errors.jobs = null;
+
+      if (!this.jobForm.symbol || this.jobForm.symbol.trim() === '') {
+        this.errors.jobSymbol = 'Bitte geben Sie ein Symbol ein';
+        return;
+      }
+
+      this.loading.addJob = true;
+
       try {
-        const response = await fetch('/api/jobs', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.jobForm)
-        });
+        const response = await axios.post('/api/jobs', this.jobForm);
 
-        const data = await response.json();
-
-        if (data.job_id) {
-          alert(`Job erfolgreich hinzugefügt: ${data.job_id}`);
+        if (response.data.job_id) {
+          this.globalError = `Job erfolgreich hinzugefügt: ${response.data.job_id}`;
+          // Jobs neu laden
           this.loadJobs();
         } else {
-          alert('Fehler beim Hinzufügen des Jobs');
+          this.errors.jobs = 'Fehler beim Hinzufügen des Jobs';
         }
       } catch (error) {
+        this.errors.jobs = `Fehler beim Hinzufügen des Jobs: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Hinzufügen des Jobs:', error);
-        alert('Fehler beim Hinzufügen des Jobs: ' + error.message);
+      } finally {
+        this.loading.addJob = false;
       }
     },
 
     async removeJob(jobId) {
       if (confirm(`Sind Sie sicher, dass Sie den Job ${jobId} löschen möchten?`)) {
+        this.loading.removeJob = jobId;
+        this.errors.jobs = null;
+
         try {
-          const response = await fetch(`/api/jobs/${jobId}`, {
-            method: 'DELETE'
-          });
+          const response = await axios.delete(`/api/jobs/${jobId}`);
 
-          const data = await response.json();
-
-          if (data.message) {
-            alert(data.message);
+          if (response.data.message) {
+            this.globalError = response.data.message;
+            // Jobs neu laden
             this.loadJobs();
           } else {
-            alert('Fehler beim Löschen des Jobs');
+            this.errors.jobs = 'Fehler beim Löschen des Jobs';
           }
         } catch (error) {
+          this.errors.jobs = `Fehler beim Löschen des Jobs: ${this.getErrorMessage(error)}`;
           console.error('Fehler beim Löschen des Jobs:', error);
-          alert('Fehler beim Löschen des Jobs: ' + error.message);
+        } finally {
+          this.loading.removeJob = null;
         }
       }
     },
 
     async saveSettings() {
+      this.loading.settings = true;
+      this.errors.settings = null;
+
       try {
         // Trader-Einstellungen speichern
-        await fetch('/api/config', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            section: 'trader',
-            config: this.settings.trader
-          })
+        await axios.post('/api/config', {
+          section: 'trader',
+          config: this.settings.trader
         });
 
         // Modell-Einstellungen speichern
-        await fetch('/api/config', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            section: 'model',
-            config: this.settings.model
-          })
+        await axios.post('/api/config', {
+          section: 'model',
+          config: this.settings.model
         });
 
-        alert('Einstellungen erfolgreich gespeichert');
+        this.globalError = 'Einstellungen erfolgreich gespeichert';
       } catch (error) {
+        this.errors.settings = `Fehler beim Speichern der Einstellungen: ${this.getErrorMessage(error)}`;
         console.error('Fehler beim Speichern der Einstellungen:', error);
-        alert('Fehler beim Speichern der Einstellungen: ' + error.message);
+      } finally {
+        this.loading.settings = false;
       }
     },
 
@@ -651,7 +760,7 @@ export default {
     formatCloseReason(reason) {
       if (reason === 'stop_loss') return 'Stop-Loss';
       if (reason === 'take_profit') return 'Take-Profit';
-      return reason;
+      return reason || '';
     },
 
     extractSymbol(jobId) {
@@ -667,25 +776,30 @@ export default {
     },
 
     initPerformanceChart() {
-      // Beispielhafte Performance-Daten
+      if (!this.$refs.performanceChart) return;
+
       const ctx = this.$refs.performanceChart.getContext('2d');
-      
+
       // Chart-Daten erstellen
       const labels = [];
       const profitLossData = [];
-      
+
       // Letzten 30 Tage generieren
       const today = new Date();
       for (let i = 30; i >= 0; i--) {
         const date = new Date();
         date.setDate(today.getDate() - i);
         labels.push(date.toLocaleDateString());
-        
+
         // Dummy-Daten für die Demonstration
         const randomValue = Math.random() * 4 - 1; // Zwischen -1% und 3%
         profitLossData.push(randomValue);
       }
-      
+
+      if (this.performanceChart) {
+        this.performanceChart.destroy();
+      }
+
       // Chart erstellen
       this.performanceChart = new Chart(ctx, {
         type: 'line',
@@ -734,12 +848,48 @@ export default {
       });
     },
 
-    updatePerformanceChart(performanceData) {
+    updatePerformanceChart() {
       if (!this.performanceChart) return;
-      
-      this.performanceChart.data.labels = performanceData.dates;
-      this.performanceChart.data.datasets[0].data = performanceData.values;
+
+      // Nur die letzten 30 Datenpunkte behalten
+      const labels = [];
+      const profitLossData = [];
+
+      // Letzten 30 Tage generieren
+      const today = new Date();
+      for (let i = 30; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(today.getDate() - i);
+        labels.push(date.toLocaleDateString());
+
+        // Dummy-Daten für die Demonstration
+        const randomValue = Math.random() * 4 - 1; // Zwischen -1% und 3%
+        profitLossData.push(randomValue);
+      }
+
+      this.performanceChart.data.labels = labels;
+      this.performanceChart.data.datasets[0].data = profitLossData;
       this.performanceChart.update();
+    },
+
+    dismissError() {
+      this.globalError = null;
+    },
+
+    getErrorMessage(error) {
+      if (error.response) {
+        // Der Server hat mit einem Statuscode außerhalb des 2xx-Bereichs geantwortet
+        if (error.response.data && error.response.data.detail) {
+          return error.response.data.detail;
+        }
+        return `${error.response.status} ${error.response.statusText}`;
+      } else if (error.request) {
+        // Die Anfrage wurde gesendet, aber keine Antwort erhalten
+        return 'Keine Antwort vom Server erhalten. Bitte überprüfen Sie Ihre Internetverbindung.';
+      } else {
+        // Etwas ist bei der Einrichtung der Anfrage schiefgegangen
+        return error.message || 'Unbekannter Fehler';
+      }
     }
   }
 }
@@ -992,6 +1142,11 @@ select {
   background-color: #1f2f3d;
 }
 
+.primary-button:disabled {
+  background-color: #97a4b3;
+  cursor: not-allowed;
+}
+
 .delete-button {
   background-color: #dc3545;
   color: white;
@@ -1005,6 +1160,11 @@ select {
   background-color: #c82333;
 }
 
+.delete-button:disabled {
+  background-color: #e48690;
+  cursor: not-allowed;
+}
+
 .action-button {
   padding: 8px 16px;
   border: none;
@@ -1013,12 +1173,17 @@ select {
   font-weight: 500;
 }
 
+.action-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .buy-button {
   background-color: #28a745;
   color: white;
 }
 
-.buy-button:hover {
+.buy-button:hover:not(:disabled) {
   background-color: #218838;
 }
 
@@ -1027,7 +1192,7 @@ select {
   color: white;
 }
 
-.sell-button:hover {
+.sell-button:hover:not(:disabled) {
   background-color: #c82333;
 }
 
@@ -1190,4 +1355,79 @@ select {
   transform: translateX(26px);
 }
 
+/* Fehlerboxen */
+.error-box {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+}
+
+.error-hint {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.error-message {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background-color: rgba(42, 63, 84, 0.9);
+  color: white;
+  padding: 15px;
+  border-radius: 4px;
+  max-width: 350px;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.dismiss-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+/* Lademeldungen */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #2a3f54;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+.loading-text {
+  color: #2a3f54;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
