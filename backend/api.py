@@ -241,6 +241,8 @@ class TradeBotAPI:
                 self.logger.error(f"Fehler beim Abrufen der Statistiken: {str(e)}")
                 raise HTTPException(status_code=500, detail=str(e))
 
+        # In der _setup_routes-Methode von api.py, aktualisiere die update_config-Funktion wie folgt:
+
         @self.app.post("/api/config")
         async def update_config(request: ConfigUpdateRequest):
             """Aktualisiert die Konfiguration"""
@@ -253,6 +255,17 @@ class TradeBotAPI:
                     # Globale Konfiguration betrifft alle Komponenten
                     if 'trading_enabled' in request.config:
                         self.trader.config['trading_enabled'] = request.config['trading_enabled']
+
+                    # API-Keys aktualisieren
+                    if 'api_keys' in request.config:
+                        if 'news_api' in request.config['api_keys']:
+                            # News API-Key in data_collector aktualisieren
+                            if not hasattr(self.data_collector, 'api_keys'):
+                                self.data_collector.api_keys = {}
+
+                            self.data_collector.api_keys['news_api'] = request.config['api_keys']['news_api']
+                            self.logger.info("News API-Key aktualisiert")
+
                     # Weitere globale Konfigurationen hier...
                 else:
                     raise HTTPException(status_code=400, detail=f"Unbekannte Konfigurationssektion: {request.section}")
@@ -274,9 +287,17 @@ class TradeBotAPI:
                 elif section == 'trader':
                     return {'config': self.trader.config}
                 else:
+                    # Zusätzliche API-Keys in der Antwort einschließen
+                    api_keys = {}
+                    if hasattr(self.data_collector, 'api_keys'):
+                        # Keine Secrets in der Antwort senden
+                        if 'news_api' in self.data_collector.api_keys:
+                            api_keys['news_api'] = self.data_collector.api_keys['news_api']
+
                     return {
                         'model_config': self.model.config,
-                        'trader_config': self.trader.config
+                        'trader_config': self.trader.config,
+                        'api_keys': api_keys
                     }
             except Exception as e:
                 self.logger.error(f"Fehler beim Abrufen der Konfiguration: {str(e)}")

@@ -36,9 +36,9 @@ class DataCollector:
 
     def get_market_data(self, symbol, timeframe='1h', limit=100):
         """Sammelt historische Marktdaten für ein bestimmtes Symbol"""
-        try:
-            # Beispiel für Binance API
-            if 'binance' in self.api_keys:
+        # Beispiel für Binance API
+        if 'binance' in self.api_keys:
+            try:
                 endpoint = f"https://api.binance.com/api/v3/klines"
                 params = {
                     'symbol': symbol.replace('-', ''),
@@ -62,25 +62,28 @@ class DataCollector:
 
                 self.logger.info(f"Erfolgreich Daten für {symbol} abgerufen: {len(df)} Einträge")
                 return df
-            else:
-                # Alternative: Yahoo Finance (keine API-Keys erforderlich)
-                import yfinance as yf
-                ticker = yf.Ticker(symbol)
-                interval_map = {'1h': '1h', '1d': '1d', '15m': '15m'}
-                df = ticker.history(period=f"{limit}{timeframe[-1]}", interval=interval_map.get(timeframe, '1h'))
+            except Exception as e:
+                self.logger.warning(f"Fehler bei Binance API: {str(e)}, versuche Yahoo Finance")
+                # Kein return hier, damit wir zum Yahoo Finance Fallback gelangen
 
-                self.logger.info(f"Erfolgreich Daten für {symbol} über Yahoo Finance abgerufen: {len(df)} Einträge")
-                return df
+        # Alternative: Yahoo Finance (keine API-Keys erforderlich)
+        try:
+            import yfinance as yf
+            ticker = yf.Ticker(symbol)
+            interval_map = {'1h': '1h', '1d': '1d', '15m': '15m'}
+            df = ticker.history(period=f"{limit}{timeframe[-1]}", interval=interval_map.get(timeframe, '1h'))
 
+            self.logger.info(f"Erfolgreich Daten für {symbol} über Yahoo Finance abgerufen: {len(df)} Einträge")
+            return df
         except Exception as e:
-            self.logger.error(f"Fehler beim Abrufen von Marktdaten: {str(e)}")
-            return pd.DataFrame()
+            self.logger.error(f"Fehler beim Abrufen von Marktdaten mit Yahoo Finance: {str(e)}")
+            return pd.DataFrame()  # Leeres DataFrame zurückgeben
 
     def get_news_sentiment(self, symbol):
         """Ruft Nachrichtensentiment für ein Symbol ab"""
-        try:
-            if 'news_api' in self.api_keys:
-                # Beispiel für Alpha Vantage News API
+        if 'news_api' in self.api_keys and self.api_keys['news_api']:
+            try:
+                # Alpha Vantage News API
                 endpoint = f"https://www.alphavantage.co/query"
                 params = {
                     'function': 'NEWS_SENTIMENT',
@@ -96,20 +99,17 @@ class DataCollector:
                     if sentiments:
                         sentiment_score = sum(sentiments) / len(sentiments)
 
+                self.logger.info(f"Sentiment-Score für {symbol}: {sentiment_score}")
                 return sentiment_score
-            else:
-                # Dummy-Wert zurückgeben, wenn kein API-Key vorhanden
-                import random
-                return random.uniform(-1, 1)
+            except Exception as e:
+                self.logger.error(f"Fehler beim Abrufen des Nachrichtensentiments: {str(e)}")
+                # Fallback auf Dummy-Wert
 
-        except Exception as e:
-            self.logger.error(f"Fehler beim Abrufen des Nachrichtensentiments: {str(e)}")
-            return 0
-
-    def get_economic_indicators(self):
-        """Ruft wichtige Wirtschaftsindikatoren ab"""
-        # Implementierung für Wirtschaftsindikatoren (Inflation, BIP usw.)
-        return {}
+        # Dummy-Wert zurückgeben, wenn kein API-Key vorhanden oder ein Fehler aufgetreten ist
+        import random
+        dummy_score = random.uniform(-0.1, 0.1)  # Kleine zufällige Werte, nahe neutral
+        self.logger.info(f"Verwende Dummy-Sentiment für {symbol}: {dummy_score}")
+        return dummy_score
 
     def prepare_features(self, symbol, prediction_hours=1):
         """Bereitet Features für das Modell vor"""
@@ -151,3 +151,15 @@ class DataCollector:
         macd = ema_fast - ema_slow
         macd_signal = macd.ewm(span=signal).mean()
         return macd, macd_signal
+
+    # Optional: Diese Methode kann später implementiert werden, wenn erweiterte Funktionalität benötigt wird
+    def get_economic_indicators(self):
+        """
+        Ruft wichtige Wirtschaftsindikatoren ab
+
+        Diese Funktion ist ein Platzhalter für zukünftige Erweiterungen.
+        Sie könnte verwendet werden, um makroökonomische Daten wie Inflationsraten,
+        BIP-Wachstum, Arbeitslosenquoten usw. abzurufen und in die Handelsentscheidungen einzubeziehen.
+        """
+        # TODO: Implementierung für Wirtschaftsindikatoren (Inflation, BIP usw.)
+        return {}
