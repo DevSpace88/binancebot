@@ -25,6 +25,11 @@
       @model-trained="onModelTrained"
     />
 
+    <NewsApiSettings
+      :news-settings="newsApiSettings"
+      @change-news-api="updateNewsApiSettings"
+    />
+
     <ApiKeySettings
       :api-settings="exchangeSettings"
       @change-api="updateExchangeSettings"
@@ -48,6 +53,7 @@ import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import RiskSettings from '../components/settings/RiskSettings.vue';
 import ModelSettings from '../components/settings/ModelSettings.vue';
 import ModelTraining from '../components/settings/ModelTraining.vue';
+import NewsApiSettings from '../components/settings/NewsApiSettings.vue';
 import ApiKeySettings from '../components/settings/ApiKeySettings.vue';
 
 export default {
@@ -58,6 +64,7 @@ export default {
     RiskSettings,
     ModelSettings,
     ModelTraining,
+    NewsApiSettings,
     ApiKeySettings
   },
   props: {
@@ -79,7 +86,11 @@ export default {
         api_key: '',
         api_secret: '',
         test_mode: true
-      })}
+      })},
+      newsApiSettings: {
+        news_api_key: this.settings.api_keys?.news_api || '',
+        sentiment_enabled: this.settings.model?.features?.includes('sentiment') || false
+      }
     };
   },
   methods: {
@@ -100,6 +111,25 @@ export default {
       this.exchangeSettings = { ...this.exchangeSettings, ...newSettings };
     },
 
+    updateNewsApiSettings(newSettings) {
+      this.newsApiSettings = { ...this.newsApiSettings, ...newSettings };
+
+      // Wenn sentiment_enabled geändert wurde, auch die Modell-Features aktualisieren
+      if (this.newsApiSettings.sentiment_enabled) {
+        // Stellen sicher, dass 'sentiment' in den Features ist
+        if (!this.modelSettings.features.includes('sentiment')) {
+          this.modelSettings.features = [...this.modelSettings.features, 'sentiment'];
+        }
+      } else {
+        // 'sentiment' aus Features entfernen, wenn es deaktiviert wurde
+        if (this.modelSettings.features.includes('sentiment')) {
+          this.modelSettings.features = this.modelSettings.features.filter(
+            feature => feature !== 'sentiment'
+          );
+        }
+      }
+    },
+
     onModelTrained(result) {
       // Modell wurde trainiert - optional könnten wir hier die aktualisierten Modelleinstellungen laden
       this.$emit('success', `Modell erfolgreich für ${result.symbol} trainiert`);
@@ -118,16 +148,63 @@ export default {
               binance: this.exchangeSettings
             }
           },
-          model: this.modelSettings
+          model: this.modelSettings,
+          api_keys: {
+            news_api: this.newsApiSettings.news_api_key
+          }
         };
 
-        // Event emittieren, damit die App die Einstellungen speichern kann
+        // Zuerst Modell-Konfiguration aktualisieren
+        await this.updateModelConfig();
+
+        // Dann Trader-Konfiguration aktualisieren
+        await this.updateTraderConfig();
+
+        // Dann API-Keys aktualisieren
+        await this.updateApiKeysConfig();
+
+        // Event emittieren, damit die App weiß, dass die Einstellungen gespeichert wurden
         this.$emit('save-settings', completeSettings);
+        this.$emit('success', 'Einstellungen erfolgreich gespeichert');
       } catch (error) {
         this.$emit('error', error.message || 'Fehler beim Speichern der Einstellungen');
       } finally {
         this.loading = false;
       }
+    },
+
+    async updateModelConfig() {
+      // Modell-Konfiguration über API aktualisieren
+      return axios.post('/api/config', {
+        section: 'model',
+        config: this.modelSettings
+      });
+    },
+
+    async updateTraderConfig() {
+      // Trader-Konfiguration über API aktualisieren
+      return axios.post('/api/config', {
+        section: 'trader',
+        config: {
+          ...this.traderSettings,
+          risk_management: this.riskManagement,
+          exchanges: {
+            binance: this.exchangeSettings
+          }
+        }
+      });
+    },
+
+    async updateApiKeysConfig() {
+      // API-Keys über API aktualisieren
+      return axios.post('/api/config', {
+        section: 'global',
+        config: {
+          api_keys: {
+            news_api: this.newsApiSettings.news_api_key
+          }
+        }
+      });
     }
   },
   watch: {
@@ -145,6 +222,10 @@ export default {
           api_secret: '',
           test_mode: true
         }));
+        this.newsApiSettings = {
+          news_api_key: newSettings.api_keys?.news_api || '',
+          sentiment_enabled: newSettings.model?.features?.includes('sentiment') || false
+        };
       },
       deep: true,
       immediate: true
