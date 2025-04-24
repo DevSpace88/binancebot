@@ -21,6 +21,10 @@
       @change-confidence="updateTraderSettings"
     />
 
+    <ModelTraining
+      @model-trained="onModelTrained"
+    />
+
     <ApiKeySettings
       :api-settings="exchangeSettings"
       @change-api="updateExchangeSettings"
@@ -43,6 +47,7 @@ import Button from '../components/common/Button.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import RiskSettings from '../components/settings/RiskSettings.vue';
 import ModelSettings from '../components/settings/ModelSettings.vue';
+import ModelTraining from '../components/settings/ModelTraining.vue';
 import ApiKeySettings from '../components/settings/ApiKeySettings.vue';
 
 export default {
@@ -52,6 +57,7 @@ export default {
     GeneralSettings,
     RiskSettings,
     ModelSettings,
+    ModelTraining,
     ApiKeySettings
   },
   props: {
@@ -92,6 +98,11 @@ export default {
 
     updateExchangeSettings(newSettings) {
       this.exchangeSettings = { ...this.exchangeSettings, ...newSettings };
+    },
+
+    onModelTrained(result) {
+      // Modell wurde trainiert - optional könnten wir hier die aktualisierten Modelleinstellungen laden
+      this.$emit('success', `Modell erfolgreich für ${result.symbol} trainiert`);
     },
 
     async saveSettings() {
