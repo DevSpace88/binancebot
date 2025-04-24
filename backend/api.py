@@ -84,6 +84,12 @@ class JobRequest(BaseModel):
         return v
 
 
+# Neues Modell für das Modelltraining
+class TrainModelRequest(BaseModel):
+    symbol: str
+    data_points: int = Field(default=2000, ge=100, le=10000, description="Anzahl der Datenpunkte (Stunden) für Training")
+
+
 # API-Klasse
 class TradeBotAPI:
     def __init__(self, model, data_collector, trader, scheduler):
@@ -343,14 +349,14 @@ class TradeBotAPI:
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/api/train")
-        async def train_model(symbol: str = Body(..., embed=True)):
+        async def train_model(request: TrainModelRequest):
             """Trainiert das Modell mit historischen Daten für ein Symbol"""
             try:
                 # Mehr historische Daten für das Training sammeln
-                features = self.data_collector.get_market_data(symbol, limit=2000)  # 2000 Stunden ≈ 3 Monate
+                features = self.data_collector.get_market_data(request.symbol, limit=request.data_points)
 
                 if features.empty:
-                    raise HTTPException(status_code=400, detail=f"Keine Trainingsdaten für {symbol} verfügbar")
+                    raise HTTPException(status_code=400, detail=f"Keine Trainingsdaten für {request.symbol} verfügbar")
 
                 # Technische Indikatoren hinzufügen
                 features['rsi'] = self.data_collector._calculate_rsi(features['close'])
@@ -368,7 +374,11 @@ class TradeBotAPI:
                 self.model.train(features.dropna())
 
                 return {
-                    "message": f"Modell erfolgreich mit {len(features.dropna())} Datenpunkten für {symbol} trainiert"}
+                    "message": f"Modell erfolgreich mit {len(features.dropna())} Datenpunkten für {request.symbol} trainiert",
+                    "data_points": len(features.dropna()),
+                    "symbol": request.symbol,
+                    "model_type": self.model.config.get('model_type', 'unknown')
+                }
 
             except HTTPException as he:
                 raise he
