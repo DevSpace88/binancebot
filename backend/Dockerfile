@@ -2,12 +2,10 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies using Alpine's package manager (apk)
+RUN apk add --no-cache \
+    build-base \
+    gcc
 
 # Copy requirements file
 COPY requirements.txt .
