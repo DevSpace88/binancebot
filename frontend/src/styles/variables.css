@@ -1,0 +1,82 @@
+:root {
+  /* Farben */
+  --color-primary: #6366f1; /* Indigo 500 */
+  --color-primary-foreground: white;
+  --color-primary-hover: #4f46e5; /* Indigo 600 */
+
+  --color-secondary: #f9fafb; /* Gray 50 */
+  --color-secondary-foreground: #111827; /* Gray 900 */
+  --color-secondary-hover: #f3f4f6; /* Gray 100 */
+
+  --color-positive: #22c55e; /* Green 500 */
+  --color-negative: #ef4444; /* Red 500 */
+
+  --color-background: #ffffff;
+  --color-foreground: #111827; /* Gray 900 */
+
+  --color-muted: #6b7280; /* Gray 500 */
+  --color-muted-foreground: #374151; /* Gray 700 */
+
+  --color-border: #e5e7eb; /* Gray 200 */
+  --color-input: #f9fafb; /* Gray 50 */
+  --color-ring: rgba(99, 102, 241, 0.5); /* Indigo 500 with opacity */
+
+  /* Abgerundete Ecken */
+  --radius-sm: 0.25rem;
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Schattierungen */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Layout */
+  --header-height: 64px;
+  --sidebar-width: 220px;
+  --max-width: 1400px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Levels */
+  --z-0: 0;
+  --z-10: 10;
+  --z-20: 20;
+  --z-30: 30;
+  --z-40: 40;
+  --z-50: 50;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-popover: 300;
+  --z-tooltip: 400;
+}
+
+/* Dark Mode */
+.dark {
+  --color-primary: #6366f1; /* Indigo 500 */
+  --color-primary-foreground: white;
+  --color-primary-hover: #818cf8; /* Indigo 400 */
+
+  --color-secondary: #1f2937; /* Gray 800 */
+  --color-secondary-foreground: #f9fafb; /* Gray 50 */
+  --color-secondary-hover: #374151; /* Gray 700 */
+
+  --color-positive: #22c55e; /* Green 500 */
+  --color-negative: #ef4444; /* Red 500 */
+
+  --color-background: #111827; /* Gray 900 */
+  --color-foreground: #f9fafb; /* Gray 50 */
+
+  --color-muted: #9ca3af; /* Gray 400 */
+  --color-muted-foreground: #d1d5db; /* Gray 300 */
+
+  --color-border: #374151; /* Gray 700 */
+  --color-input: #1f2937; /* Gray 800 */
+  --color-ring: rgba(99, 102, 241, 0.5); /* Indigo 500 with opacity */
+}
