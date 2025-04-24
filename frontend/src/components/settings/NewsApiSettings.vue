@@ -1,27 +1,29 @@
 <template>
   <Card title="News API-Einstellungen" class="settings-section">
-    <div class="form-group">
-      <label for="news-api-key" class="label">News API-Schlüssel</label>
-      <input
-        type="password"
-        id="news-api-key"
-        v-model="localSettings.news_api_key"
-        class="input"
-        @change="emitChanges"
-      >
-      <div class="input-helper">Schlüssel für News und Sentiment-Analyse (z.B. Alpha Vantage)</div>
-    </div>
-
-    <div class="form-group">
-      <div class="flex-space-between">
-        <label for="sentiment-enabled" class="label">Sentiment-Analyse aktivieren</label>
-        <div class="toggle-switch">
-          <input type="checkbox" id="sentiment-enabled" v-model="localSettings.sentiment_enabled" @change="emitChanges">
-          <label for="sentiment-enabled"></label>
-        </div>
+    <form @submit.prevent>
+      <div class="form-group">
+        <label for="news-api-key" class="label">News API-Schlüssel</label>
+        <input
+          type="password"
+          id="news-api-key"
+          v-model="localSettings.news_api_key"
+          class="input"
+          @change="emitChanges"
+        >
+        <div class="input-helper">Schlüssel für News und Sentiment-Analyse (z.B. Alpha Vantage)</div>
       </div>
-      <div class="input-helper">Aktiviert die Einbeziehung von Nachrichtensentiment in die Prognosen</div>
-    </div>
+
+      <div class="form-group">
+        <div class="flex-space-between">
+          <label for="sentiment-enabled" class="label">Sentiment-Analyse aktivieren</label>
+          <div class="toggle-switch">
+            <input type="checkbox" id="sentiment-enabled" v-model="localSettings.sentiment_enabled" @change="emitChanges">
+            <label for="sentiment-enabled"></label>
+          </div>
+        </div>
+        <div class="input-helper">Aktiviert die Einbeziehung von Nachrichtensentiment in die Prognosen</div>
+      </div>
+    </form>
   </Card>
 </template>
 

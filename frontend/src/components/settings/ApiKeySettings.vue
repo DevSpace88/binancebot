@@ -1,36 +1,38 @@
 <template>
   <Card title="API-Schlüssel" class="settings-section">
-    <div class="form-group">
-      <label for="binance-api-key" class="label">Binance API-Schlüssel</label>
-      <input
-        type="password"
-        id="binance-api-key"
-        v-model="localSettings.api_key"
-        class="input"
-        @change="emitChanges"
-      >
-    </div>
+    <form @submit.prevent>
+      <div class="form-group">
+        <label for="binance-api-key" class="label">Binance API-Schlüssel</label>
+        <input
+          type="password"
+          id="binance-api-key"
+          v-model="localSettings.api_key"
+          class="input"
+          @change="emitChanges"
+        >
+      </div>
 
-    <div class="form-group">
-      <label for="binance-api-secret" class="label">Binance API-Secret</label>
-      <input
-        type="password"
-        id="binance-api-secret"
-        v-model="localSettings.api_secret"
-        class="input"
-        @change="emitChanges"
-      >
-    </div>
+      <div class="form-group">
+        <label for="binance-api-secret" class="label">Binance API-Secret</label>
+        <input
+          type="password"
+          id="binance-api-secret"
+          v-model="localSettings.api_secret"
+          class="input"
+          @change="emitChanges"
+        >
+      </div>
 
-    <div class="form-group">
-      <div class="flex-space-between">
-        <label for="binance-test-mode" class="label">Testmodus</label>
-        <div class="toggle-switch">
-          <input type="checkbox" id="binance-test-mode" v-model="localSettings.test_mode" @change="emitChanges">
-          <label for="binance-test-mode"></label>
+      <div class="form-group">
+        <div class="flex-space-between">
+          <label for="binance-test-mode" class="label">Testmodus</label>
+          <div class="toggle-switch">
+            <input type="checkbox" id="binance-test-mode" v-model="localSettings.test_mode" @change="emitChanges">
+            <label for="binance-test-mode"></label>
+          </div>
         </div>
       </div>
-    </div>
+    </form>
   </Card>
 </template>
 

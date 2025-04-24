@@ -92,12 +92,13 @@ class TrainModelRequest(BaseModel):
 
 # API-Klasse
 class TradeBotAPI:
-    def __init__(self, model, data_collector, trader, scheduler):
+    def __init__(self, model, data_collector, trader, scheduler, parent_app=None):
         self.app = FastAPI(title="TradeBot API",
                            description="API für den prädiktiven Handelsbot",
                            version="1.0.0")
 
         # Komponenten speichern
+        self.app.parent_app = parent_app
         self.model = model
         self.data_collector = data_collector
         self.trader = trader
@@ -259,16 +260,18 @@ class TradeBotAPI:
                     # API-Keys aktualisieren
                     if 'api_keys' in request.config:
                         if 'news_api' in request.config['api_keys']:
-                            # News API-Key in data_collector aktualisieren
                             if not hasattr(self.data_collector, 'api_keys'):
                                 self.data_collector.api_keys = {}
 
                             self.data_collector.api_keys['news_api'] = request.config['api_keys']['news_api']
                             self.logger.info("News API-Key aktualisiert")
 
-                    # Weitere globale Konfigurationen hier...
                 else:
                     raise HTTPException(status_code=400, detail=f"Unbekannte Konfigurationssektion: {request.section}")
+
+                # Konfiguration speichern
+                if hasattr(self.app, 'parent_app') and hasattr(self.app.parent_app, 'save_config'):
+                    self.app.parent_app.save_config()
 
                 return {"message": f"Konfiguration für {request.section} aktualisiert"}
 

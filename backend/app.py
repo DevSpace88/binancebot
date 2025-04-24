@@ -25,7 +25,7 @@ class TradeBotApp:
         self.scheduler = Scheduler()
 
         # API initialisieren
-        self.api = TradeBotAPI(self.model, self.data_collector, self.trader, self.scheduler)
+        self.api = TradeBotAPI(self.model, self.data_collector, self.trader, self.scheduler, parent_app=self)
 
     def _setup_logging(self):
         """Richtet das Logging ein"""
@@ -88,6 +88,29 @@ class TradeBotApp:
             self.logger.info("Verwende Standard-Konfiguration")
 
         return default_config
+
+    def save_config(self, config_file=None):
+        """Speichert die aktuelle Konfiguration in eine Datei"""
+        config_to_save = {
+            'api_keys': self.data_collector.api_keys,
+            'model': self.model.config,
+            'trader': self.trader.config,
+            'api': {
+                'host': self.config.get('api', {}).get('host', '0.0.0.0'),
+                'port': self.config.get('api', {}).get('port', 8000)
+            }
+        }
+
+        save_path = config_file or 'config.json'
+
+        try:
+            with open(save_path, 'w') as f:
+                json.dump(config_to_save, f, indent=2)
+            self.logger.info(f"Konfiguration in {save_path} gespeichert")
+            return True
+        except Exception as e:
+            self.logger.error(f"Fehler beim Speichern der Konfiguration: {str(e)}")
+            return False
 
     def start(self):
         """Startet die Anwendung"""

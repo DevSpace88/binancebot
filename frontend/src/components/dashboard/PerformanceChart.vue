@@ -35,7 +35,12 @@ export default {
 
       const ctx = this.$refs.chartCanvas.getContext('2d');
 
-      // Generate labels for the last 30 days
+      // Zerstöre das vorherige Chart-Objekt, wenn es existiert
+      if (this.chart) {
+        this.chart.destroy();
+      }
+
+      // Erzeuge Labels für die letzten 30 Tage
       const labels = [];
       const today = new Date();
       for (let i = 30; i >= 0; i--) {
@@ -44,11 +49,57 @@ export default {
         labels.push(date.toLocaleDateString());
       }
 
-      // Destroy previous chart if it exists
-      if (this.chart) {
-        this.chart.destroy();
-      }
+      // Chart-Optionen verbessern und Fehlerquellen beheben
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false, // Animation deaktivieren, um Fehler zu vermeiden
+        interaction: {
+          mode: 'nearest',
+          intersect: false,
+          axis: 'x'
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              padding: 15
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.raw.toFixed(2)}%`;
+              }
+            }
+          },
+          filler: {
+            propagate: false // Wichtig, um Fehler mit fill zu vermeiden
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 10
+            }
+          },
+          y: {
+            beginAtZero: false,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
+        }
+      };
 
+      // Chart erstellen
       this.chart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -56,60 +107,31 @@ export default {
           datasets: [{
             label: 'Tägliche P/L (%)',
             data: this.data,
-            borderColor: 'var(--color-primary)',
+            borderColor: 'rgb(99, 102, 241)',
             backgroundColor: 'rgba(99, 102, 241, 0.1)',
             tension: 0.4,
-            fill: true
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 5
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'nearest',
-            intersect: false,
-            axis: 'x'
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.dataset.label}: ${context.raw.toFixed(2)}%`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: false,
-              grid: {
-                drawBorder: false
-              }
-            },
-            x: {
-              grid: {
-                display: false
-              }
-            }
-          }
-        }
+        options: chartOptions
       });
     }
   },
   watch: {
     data: {
       handler() {
-        // Update chart when data changes
-        this.initChart();
+        this.$nextTick(() => {
+          this.initChart();
+        });
       },
       deep: true
     }
   },
   beforeUnmount() {
-    // Clean up chart instance
+    // Chart-Instanz aufräumen
     if (this.chart) {
       this.chart.destroy();
       this.chart = null;

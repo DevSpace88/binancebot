@@ -2,52 +2,55 @@
   <div class="settings-page">
     <h1 class="page-title">Einstellungen</h1>
 
-    <GeneralSettings
-      :settings="traderSettings"
-      @change="updateTraderSettings"
-    />
-
-    <RiskSettings
-      :settings="traderSettings"
-      :risk-settings="riskManagement"
-      @change="updateTraderSettings"
-      @change-risk="updateRiskSettings"
-    />
-
-    <ModelSettings
-      :model-settings="modelSettings"
-      :confidence-settings="traderSettings"
-      @change-model="updateModelSettings"
-      @change-confidence="updateTraderSettings"
-    />
-
-    <ModelTraining
-      @model-trained="onModelTrained"
-    />
-
-    <NewsApiSettings
-      :news-settings="newsApiSettings"
-      @change-news-api="updateNewsApiSettings"
-    />
-
-    <ApiKeySettings
-      :api-settings="exchangeSettings"
-      @change-api="updateExchangeSettings"
-    />
-
-    <div class="settings-actions">
-      <Button
-        @click="saveSettings"
-        variant="primary"
-        :loading="loading"
-        :disabled="loading"
-        text="Einstellungen speichern"
+    <form @submit.prevent="saveSettings" class="settings-form">
+      <GeneralSettings
+        :settings="traderSettings"
+        @change="updateTraderSettings"
       />
-    </div>
+
+      <RiskSettings
+        :settings="traderSettings"
+        :risk-settings="riskManagement"
+        @change="updateTraderSettings"
+        @change-risk="updateRiskSettings"
+      />
+
+      <ModelSettings
+        :model-settings="modelSettings"
+        :confidence-settings="traderSettings"
+        @change-model="updateModelSettings"
+        @change-confidence="updateTraderSettings"
+      />
+
+      <ModelTraining
+        @model-trained="onModelTrained"
+      />
+
+      <NewsApiSettings
+        :news-settings="newsApiSettings"
+        @change-news-api="updateNewsApiSettings"
+      />
+
+      <ApiKeySettings
+        :api-settings="exchangeSettings"
+        @change-api="updateExchangeSettings"
+      />
+
+      <div class="settings-actions">
+        <Button
+          type="submit"
+          variant="primary"
+          :loading="loading"
+          :disabled="loading"
+          text="Einstellungen speichern"
+        />
+      </div>
+    </form>
   </div>
 </template>
 
 <script>
+import axios from 'axios'; // Wichtig: Axios hier importieren
 import Button from '../components/common/Button.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import RiskSettings from '../components/settings/RiskSettings.vue';
@@ -245,6 +248,10 @@ export default {
   font-weight: 600;
   margin-bottom: 1.5rem;
   color: var(--color-foreground);
+}
+
+.settings-form {
+  width: 100%;
 }
 
 .settings-actions {
