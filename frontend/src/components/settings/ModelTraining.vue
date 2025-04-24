@@ -61,35 +61,52 @@ export default {
   },
   methods: {
     async trainModel() {
-      this.error = null;
-      this.trainingResult = null;
+  this.error = null;
+  this.trainingResult = null;
 
-      if (!this.trainingSymbol || this.trainingSymbol.trim() === '') {
-        this.error = 'Bitte geben Sie ein Symbol ein';
-        return;
+  if (!this.trainingSymbol || this.trainingSymbol.trim() === '') {
+    this.error = 'Bitte geben Sie ein Symbol ein';
+    return;
+  }
+
+  try {
+    this.loading = true;
+    console.log(`Training für Symbol: ${this.trainingSymbol}, Datenpunkte: ${this.dataPoints}`);
+
+    const response = await axios.post('/api/train', {
+      symbol: this.trainingSymbol,
+      data_points: parseInt(this.dataPoints)
+    });
+
+    console.log("Erfolgreiche Antwort:", response.data);
+    this.trainingResult = response.data.message || 'Modell erfolgreich trainiert';
+    this.$emit('model-trained', {
+      symbol: this.trainingSymbol,
+      result: this.trainingResult
+    });
+
+  } catch (error) {
+    // Erweiterte Fehleranzeige
+    console.log("Vollständige Fehlerantwort:", error.response?.data);
+
+    if (error.response && error.response.data) {
+      if (error.response.data.detail) {
+        this.error = error.response.data.detail;
+      } else if (typeof error.response.data === 'string') {
+        this.error = error.response.data;
+      } else {
+        this.error = `Serverfehler: ${error.response.status}`;
       }
-
-      try {
-        this.loading = true;
-
-        const response = await axios.post('/api/train', {
-          symbol: this.trainingSymbol,
-          data_points: parseInt(this.dataPoints)
-        });
-
-        this.trainingResult = response.data.message || 'Modell erfolgreich trainiert';
-        this.$emit('model-trained', {
-          symbol: this.trainingSymbol,
-          result: this.trainingResult
-        });
-
-      } catch (error) {
-        this.error = error.response?.data?.detail || 'Fehler beim Training des Modells';
-        console.error('Fehler beim Training des Modells:', error);
-      } finally {
-        this.loading = false;
-      }
+    } else if (error.request) {
+      this.error = 'Keine Antwort vom Server. Bitte überprüfe deine Internetverbindung.';
+    } else {
+      this.error = `Fehler beim Training des Modells: ${error.message}`;
     }
+    console.error('Fehler beim Training des Modells:', error);
+  } finally {
+    this.loading = false;
+  }
+}
   }
 }
 </script>
