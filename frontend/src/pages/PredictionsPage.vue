@@ -18,7 +18,6 @@
         Noch keine Prognosehistorie verfügbar
       </div>
       <div v-else class="prediction-history-list">
-        <!-- Hier könnte die Historie angezeigt werden, wenn verfügbar -->
       </div>
     </Card>
   </div>

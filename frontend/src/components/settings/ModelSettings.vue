@@ -83,7 +83,6 @@ export default {
     };
   },
   methods: {
-    // Änderungen an Parent weitergeben
     emitModelChanges() {
       this.$emit('change-model', { ...this.localSettings });
     },
@@ -92,7 +91,6 @@ export default {
       this.$emit('change-confidence', { ...this.localConfidenceSettings });
     },
 
-    // Lokale Einstellungen aus Props aktualisieren
     updateFromProps() {
       this.localSettings = {
         model_type: this.modelSettings.model_type ?? 'random_forest',

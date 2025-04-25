@@ -11,7 +11,6 @@ if __name__ == "__main__":
 
     app = TradeBotApp(config_file=args.config)
 
-    # Port aus Kommandozeilenargumenten überschreiben
     if args.port:
         app.config['api']['port'] = args.port
 

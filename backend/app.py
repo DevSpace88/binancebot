@@ -18,13 +18,13 @@ class TradeBotApp:
         self.logger = self._setup_logging()
         self.config = self._load_config(config_file)
 
-        # Komponenten initialisieren
+
         self.data_collector = DataCollector(api_keys=self.config.get('api_keys', {}))
         self.model = PredictionModel(config=self.config.get('model', {}))
         self.trader = Trader(config=self.config.get('trader', {}))
         self.scheduler = Scheduler()
 
-        # API initialisieren
+
         self.api = TradeBotAPI(self.model, self.data_collector, self.trader, self.scheduler, parent_app=self)
 
     def _setup_logging(self):
@@ -70,7 +70,7 @@ class TradeBotApp:
                 with open(config_file, 'r') as f:
                     loaded_config = json.load(f)
 
-                # Rekursive Update-Funktion für verschachtelte Dictionaries
+
                 def recursive_update(d, u):
                     for k, v in u.items():
                         if isinstance(v, dict) and k in d and isinstance(d[k], dict):
@@ -90,7 +90,7 @@ class TradeBotApp:
         return default_config
 
     def save_config(self, config_file=None):
-        """Speichert die aktuelle Konfiguration in eine Datei"""
+        """saves current config in a file"""
         config_to_save = {
             'api_keys': self.data_collector.api_keys,
             'model': self.model.config,
@@ -113,7 +113,6 @@ class TradeBotApp:
             return False
 
     def start(self):
-        """Startet die Anwendung"""
         self.logger.info("TradeBot wird gestartet...")
 
         # Scheduler starten
@@ -129,7 +128,6 @@ class TradeBotApp:
         self.api.run(host=host, port=port)
 
     def stop(self):
-        """Stoppt die Anwendung"""
         self.logger.info("TradeBot wird gestoppt...")
         self.scheduler.stop()
         self.logger.info("TradeBot gestoppt")

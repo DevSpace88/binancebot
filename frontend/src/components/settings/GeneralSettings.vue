@@ -61,12 +61,10 @@ export default {
     };
   },
   methods: {
-    // Änderungen an Parent weitergeben
     emitChanges() {
       this.$emit('change', { ...this.localSettings });
     },
 
-    // Lokale Einstellungen aus Props aktualisieren
     updateFromProps() {
       this.localSettings = {
         trading_enabled: this.settings.trading_enabled ?? false,

@@ -50,7 +50,7 @@
 </template>
 
 <script>
-import axios from 'axios'; // Wichtig: Axios hier importieren
+import axios from 'axios';
 import Button from '../components/common/Button.vue';
 import GeneralSettings from '../components/settings/GeneralSettings.vue';
 import RiskSettings from '../components/settings/RiskSettings.vue';
@@ -98,7 +98,6 @@ export default {
   },
   methods: {
     updateTraderSettings(newSettings) {
-      // Tiefe Kopie erstellen, damit Vue die Änderung als neu erkennt
       this.traderSettings = { ...this.traderSettings, ...newSettings };
     },
 
@@ -117,14 +116,11 @@ export default {
     updateNewsApiSettings(newSettings) {
       this.newsApiSettings = { ...this.newsApiSettings, ...newSettings };
 
-      // Wenn sentiment_enabled geändert wurde, auch die Modell-Features aktualisieren
       if (this.newsApiSettings.sentiment_enabled) {
-        // Stellen sicher, dass 'sentiment' in den Features ist
         if (!this.modelSettings.features.includes('sentiment')) {
           this.modelSettings.features = [...this.modelSettings.features, 'sentiment'];
         }
       } else {
-        // 'sentiment' aus Features entfernen, wenn es deaktiviert wurde
         if (this.modelSettings.features.includes('sentiment')) {
           this.modelSettings.features = this.modelSettings.features.filter(
             feature => feature !== 'sentiment'
@@ -134,7 +130,6 @@ export default {
     },
 
     onModelTrained(result) {
-      // Modell wurde trainiert - optional könnten wir hier die aktualisierten Modelleinstellungen laden
       this.$emit('success', `Modell erfolgreich für ${result.symbol} trainiert`);
     },
 
@@ -142,7 +137,6 @@ export default {
       try {
         this.loading = true;
 
-        // Strukturieren der Einstellungen in das Format der API
         const completeSettings = {
           trader: {
             ...this.traderSettings,
@@ -157,16 +151,12 @@ export default {
           }
         };
 
-        // Zuerst Modell-Konfiguration aktualisieren
         await this.updateModelConfig();
 
-        // Dann Trader-Konfiguration aktualisieren
         await this.updateTraderConfig();
 
-        // Dann API-Keys aktualisieren
         await this.updateApiKeysConfig();
 
-        // Event emittieren, damit die App weiß, dass die Einstellungen gespeichert wurden
         this.$emit('save-settings', completeSettings);
         this.$emit('success', 'Einstellungen erfolgreich gespeichert');
       } catch (error) {
@@ -177,7 +167,6 @@ export default {
     },
 
     async updateModelConfig() {
-      // Modell-Konfiguration über API aktualisieren
       return axios.post('/api/config', {
         section: 'model',
         config: this.modelSettings
@@ -185,7 +174,6 @@ export default {
     },
 
     async updateTraderConfig() {
-      // Trader-Konfiguration über API aktualisieren
       return axios.post('/api/config', {
         section: 'trader',
         config: {
@@ -199,7 +187,6 @@ export default {
     },
 
     async updateApiKeysConfig() {
-      // API-Keys über API aktualisieren
       return axios.post('/api/config', {
         section: 'global',
         config: {
@@ -213,7 +200,6 @@ export default {
   watch: {
     settings: {
       handler(newSettings) {
-        // Hier wurde eine direkte Zuweisung verwendet, was die Rekursion unterbrechen sollte
         this.traderSettings = JSON.parse(JSON.stringify(newSettings.trader || {}));
         this.modelSettings = JSON.parse(JSON.stringify(newSettings.model || {}));
         this.riskManagement = JSON.parse(JSON.stringify(newSettings.trader?.risk_management || {

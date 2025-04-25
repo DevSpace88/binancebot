@@ -1,6 +1,5 @@
 @import './variables.css';
 
-/* Reset und Basis-Styles */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -21,7 +20,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Typografie */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.25;
@@ -63,7 +61,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Input Elements */
 .input {
   display: block;
   width: 100%;
@@ -110,7 +107,6 @@ select.input {
   padding-right: 2.5rem;
 }
 
-/* Labels */
 .label {
   display: block;
   font-size: 0.875rem;
@@ -119,12 +115,10 @@ select.input {
   color: var(--color-foreground);
 }
 
-/* Form Group */
 .form-group {
   margin-bottom: 1.25rem;
 }
 
-/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -143,7 +137,6 @@ select.input {
   cursor: not-allowed;
 }
 
-/* Card */
 .card {
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
@@ -152,7 +145,6 @@ select.input {
   overflow: hidden;
 }
 
-/* Utility Classes */
 .text-center {
   text-align: center;
 }
@@ -229,7 +221,6 @@ select.input {
   margin-bottom: 1rem;
 }
 
-/* Status & Result Classes */
 .positive {
   color: var(--color-positive);
 }
@@ -238,7 +229,6 @@ select.input {
   color: var(--color-negative);
 }
 
-/* Empty State */
 .empty-state {
   padding: 2rem;
   text-align: center;
@@ -247,7 +237,6 @@ select.input {
   border-radius: var(--radius);
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   :root {
     --sidebar-width: 64px;

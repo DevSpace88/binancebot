@@ -86,7 +86,6 @@ export default {
     });
 
   } catch (error) {
-    // Erweiterte Fehleranzeige
     console.log("Vollständige Fehlerantwort:", error.response?.data);
 
     if (error.response && error.response.data) {

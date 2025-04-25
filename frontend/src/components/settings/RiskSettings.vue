@@ -89,7 +89,6 @@ export default {
     };
   },
   methods: {
-    // Änderungen an Parent weitergeben
     emitChanges() {
       this.$emit('change', { ...this.localSettings });
     },
@@ -98,7 +97,6 @@ export default {
       this.$emit('change-risk', { ...this.localRiskSettings });
     },
 
-    // Lokale Einstellungen aus Props aktualisieren
     updateFromProps() {
       this.localSettings = {
         stop_loss_pct: this.settings.stop_loss_pct ?? 2.0,

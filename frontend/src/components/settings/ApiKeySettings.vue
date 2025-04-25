@@ -60,12 +60,10 @@ export default {
     };
   },
   methods: {
-    // Änderungen an Parent weitergeben
     emitChanges() {
       this.$emit('change-api', { ...this.localSettings });
     },
 
-    // Lokale Einstellungen aus Props aktualisieren
     updateFromProps() {
       this.localSettings = {
         api_key: this.apiSettings.api_key || '',

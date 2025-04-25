@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// API-Endpunkte
 const API = {
   // Status & Stats
   STATUS: '/api/status',
@@ -67,19 +66,16 @@ const apiService = {
     return axios.post(API.CONFIG, { section, config });
   },
 
-  // Helper Methoden
+  // Helper Methods
   formatError(error) {
     if (error.response) {
-      // Der Server hat mit einem Statuscode außerhalb des 2xx-Bereichs geantwortet
       if (error.response.data && error.response.data.detail) {
         return error.response.data.detail;
       }
       return `${error.response.status} ${error.response.statusText}`;
     } else if (error.request) {
-      // Die Anfrage wurde gesendet, aber keine Antwort erhalten
       return 'Keine Antwort vom Server erhalten. Bitte überprüfen Sie Ihre Internetverbindung.';
     } else {
-      // Etwas ist bei der Einrichtung der Anfrage schiefgegangen
       return error.message || 'Unbekannter Fehler';
     }
   }

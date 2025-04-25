@@ -13,25 +13,25 @@ from datetime import datetime, timedelta
 class Trader:
     def __init__(self, config=None):
         self.config = config or {
-            'trading_enabled': False,  # Standardmäßig deaktiviert (Paper-Trading)
+            'trading_enabled': False,  # Disabled by default (Paper-Trading)
             'exchanges': {
                 'binance': {
                     'api_key': '',
                     'api_secret': '',
-                    'test_mode': True  # Testmodus standardmäßig aktiviert
+                    'test_mode': True  # Test mode enabled by default
                 }
             },
-            'trade_amount': 100,  # Standardbetrag pro Trade in der Basiswährung (z.B. USD)
+            'trade_amount': 100,  # Default amount per trade in base currency (e.g. USD)
             'max_trades_per_day': 5,
             'stop_loss_pct': 2.0,
             'take_profit_pct': 3.0,
             'max_open_trades': 3,
-            'confidence_threshold': 0.7,  # Mindestvertrauen für Trades
-            'min_change_pct': 1.0,  # Mindeständerung für Trades
-            'symbols': ['BTC-USDT', 'ETH-USDT'],  # Handelbare Symbole
+            'confidence_threshold': 0.7,  # Minimum confidence for trades
+            'min_change_pct': 1.0,  # Minimum change for trades
+            'symbols': ['BTC-USDT', 'ETH-USDT'],  # Tradable symbols
             'risk_management': {
-                'max_risk_per_trade': 2.0,  # Maximales Risiko pro Trade in %
-                'daily_drawdown_limit': 5.0  # Maximaler täglicher Drawdown in %
+                'max_risk_per_trade': 2.0,  # Maximum risk per trade in %
+                'daily_drawdown_limit': 5.0  # Maximum daily drawdown in %
             }
         }
 
@@ -44,11 +44,11 @@ class Trader:
             'date': datetime.now().strftime('%Y-%m-%d')
         }
 
-        # Handelshistorie laden, falls vorhanden
+        # Load trade history if available
         self._load_trade_history()
 
     def _load_trade_history(self):
-        """Lädt die Handelshistorie aus einer Datei"""
+        """Loads the trading history from a file"""
         try:
             if os.path.exists('trade_history.json'):
                 with open('trade_history.json', 'r') as f:
@@ -57,7 +57,7 @@ class Trader:
                     self.open_trades = data.get('open_trades', [])
                     self.daily_stats = data.get('daily_stats', self.daily_stats)
 
-                # Überprüfen, ob daily_stats für den aktuellen Tag ist
+                # Check if daily_stats is for the current day
                 if self.daily_stats['date'] != datetime.now().strftime('%Y-%m-%d'):
                     self.daily_stats = {
                         'trades': 0,
@@ -65,13 +65,13 @@ class Trader:
                         'date': datetime.now().strftime('%Y-%m-%d')
                     }
 
-                self.logger.info(f"Handelshistorie geladen: {len(self.trade_history)} vergangene Trades, " +
-                                 f"{len(self.open_trades)} offene Trades")
+                self.logger.info(f"Trading history loaded: {len(self.trade_history)} past trades, " +
+                                 f"{len(self.open_trades)} open trades")
         except Exception as e:
-            self.logger.error(f"Fehler beim Laden der Handelshistorie: {str(e)}")
+            self.logger.error(f"Error loading trading history: {str(e)}")
 
     def _save_trade_history(self):
-        """Speichert die Handelshistorie in einer Datei"""
+        """Saves the trading history to a file"""
         try:
             data = {
                 'history': self.trade_history,
@@ -82,63 +82,63 @@ class Trader:
             with open('trade_history.json', 'w') as f:
                 json.dump(data, f, indent=2)
 
-            self.logger.info("Handelshistorie gespeichert")
+            self.logger.info("Trading history saved")
         except Exception as e:
-            self.logger.error(f"Fehler beim Speichern der Handelshistorie: {str(e)}")
+            self.logger.error(f"Error saving trading history: {str(e)}")
 
     def process_prediction(self, symbol: str, prediction: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Verarbeitet eine Vorhersage und entscheidet über Handelsaktionen
+        Processes a prediction and decides on trading actions
 
         Args:
-            symbol: Handelssymbol (z.B. 'BTC-USDT')
-            prediction: Vorhersageergebnis vom Modell
+            symbol: Trading symbol (e.g. 'BTC-USDT')
+            prediction: Prediction result from the model
 
         Returns:
-            Dictionary mit Handelsentscheidung und -details
+            Dictionary with trading decision and details
         """
         if not self.config['trading_enabled']:
             return {
                 'action': 'none',
-                'reason': 'Trading ist deaktiviert (Paper-Trading-Modus)',
+                'reason': 'Trading is disabled (Paper-Trading mode)',
                 'timestamp': datetime.now().isoformat(),
                 'symbol': symbol,
                 'prediction': prediction
             }
 
-        # Überprüfen, ob das Symbol in der Liste der handelbaren Symbole ist
+        # Check if the symbol is in the list of tradable symbols
         if symbol not in self.config['symbols']:
             return {
                 'action': 'none',
-                'reason': f"Symbol {symbol} ist nicht in der Liste der handelbaren Symbole",
+                'reason': f"Symbol {symbol} is not in the list of tradable symbols",
                 'timestamp': datetime.now().isoformat()
             }
 
-        # Tägliches Handelslimit überprüfen
+        # Check daily trading limit
         if self.daily_stats['trades'] >= self.config['max_trades_per_day']:
             return {
                 'action': 'none',
-                'reason': 'Tägliches Handelslimit erreicht',
+                'reason': 'Daily trading limit reached',
                 'timestamp': datetime.now().isoformat(),
                 'symbol': symbol
             }
 
-        # Offene Trades für das Symbol überprüfen
+        # Check open trades for the symbol
         symbol_open_trades = [t for t in self.open_trades if t['symbol'] == symbol]
         if len(symbol_open_trades) > 0:
-            # Es gibt bereits offene Trades für dieses Symbol
+            # There are already open trades for this symbol
             return {
                 'action': 'none',
-                'reason': f"Es gibt bereits {len(symbol_open_trades)} offene Trades für {symbol}",
+                'reason': f"There are already {len(symbol_open_trades)} open trades for {symbol}",
                 'timestamp': datetime.now().isoformat(),
                 'symbol': symbol
             }
 
-        # Mindestvertrauen und -änderung überprüfen
+        # Check minimum confidence and change
         if prediction.get('confidence', 0) < self.config['confidence_threshold']:
             return {
                 'action': 'none',
-                'reason': f"Vertrauen {prediction.get('confidence', 0):.2f} unter Schwellenwert {self.config['confidence_threshold']}",
+                'reason': f"Confidence {prediction.get('confidence', 0):.2f} below threshold {self.config['confidence_threshold']}",
                 'timestamp': datetime.now().isoformat(),
                 'symbol': symbol
             }
@@ -146,18 +146,18 @@ class Trader:
         if abs(prediction.get('change_pct', 0)) < self.config['min_change_pct']:
             return {
                 'action': 'none',
-                'reason': f"Vorhergesagte Änderung {abs(prediction.get('change_pct', 0)):.2f}% unter Schwellenwert {self.config['min_change_pct']}%",
+                'reason': f"Predicted change {abs(prediction.get('change_pct', 0)):.2f}% below threshold {self.config['min_change_pct']}%",
                 'timestamp': datetime.now().isoformat(),
                 'symbol': symbol
             }
 
-        # Handelsentscheidung treffen
+        # Make trading decision
         action = 'buy' if prediction.get('direction') == 'up' else 'sell'
 
-        # Trade ausführen
+        # Execute trade
         trade_result = self._execute_trade(symbol, action, prediction)
 
-        # Trade zur Handelshistorie hinzufügen
+        # Add trade to trading history
         if trade_result.get('success', False):
             trade_info = {
                 'id': f"trade_{int(time.time())}",
@@ -176,7 +176,7 @@ class Trader:
             self.daily_stats['trades'] += 1
             self._save_trade_history()
 
-            self.logger.info(f"Neuer Trade eröffnet: {action.upper()} {symbol} bei {prediction.get('current')}")
+            self.logger.info(f"New trade opened: {action.upper()} {symbol} at {prediction.get('current')}")
 
             return {
                 'action': action,
@@ -188,43 +188,43 @@ class Trader:
         else:
             return {
                 'action': 'error',
-                'reason': trade_result.get('message', 'Unbekannter Fehler'),
+                'reason': trade_result.get('message', 'Unknown error'),
                 'timestamp': datetime.now().isoformat(),
                 'symbol': symbol
             }
 
     def _execute_trade(self, symbol: str, action: str, prediction: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Führt einen Trade aus (oder simuliert ihn im Paper-Trading-Modus)
+        Executes a trade (or simulates it in Paper-Trading mode)
 
         Args:
-            symbol: Handelssymbol
-            action: 'buy' oder 'sell'
-            prediction: Vorhersageergebnis
+            symbol: Trading symbol
+            action: 'buy' or 'sell'
+            prediction: Prediction result
 
         Returns:
-            Trade-Ergebnis
+            Trade result
         """
         try:
             if not self.config['trading_enabled'] or self.config['exchanges']['binance'].get('test_mode', True):
-                # Paper-Trading-Modus
-                self.logger.info(f"Paper-Trading: {action.upper()} {symbol} bei {prediction.get('current')}")
+                # Paper-Trading mode
+                self.logger.info(f"Paper-Trading: {action.upper()} {symbol} at {prediction.get('current')}")
                 return {
                     'success': True,
-                    'message': 'Paper-Trading-Modus'
+                    'message': 'Paper-Trading mode'
                 }
             else:
-                # Live-Trading (Binance als Beispiel)
+                # Live-Trading (Binance as example)
                 if 'binance' in self.config['exchanges'] and self.config['exchanges']['binance']['api_key']:
-                    # Hier würde die Integration mit der Binance-API erfolgen
+                    # Here would be the integration with the Binance API
                     api_key = self.config['exchanges']['binance']['api_key']
                     api_secret = self.config['exchanges']['binance']['api_secret']
 
-                    # Platzhalter für Binance-API-Integration
-                    self.logger.info(f"Echter Trade: {action.upper()} {symbol} bei {prediction.get('current')}")
+                    # Placeholder for Binance API integration
+                    self.logger.info(f"Real trade: {action.upper()} {symbol} at {prediction.get('current')}")
 
-                    # In einer echten Implementierung würde hier die Binance-API aufgerufen werden
-                    # Beispiel:
+                    # In a real implementation, the Binance API would be called here
+                    # Example:
                     # from binance.client import Client
                     # client = Client(api_key, api_secret)
                     # if action == 'buy':
@@ -234,37 +234,37 @@ class Trader:
 
                     return {
                         'success': True,
-                        'message': 'Trade erfolgreich ausgeführt'
+                        'message': 'Trade successfully executed'
                     }
                 else:
                     return {
                         'success': False,
-                        'message': 'Keine gültigen API-Zugangsdaten für die Börse'
+                        'message': 'No valid API credentials for the exchange'
                     }
         except Exception as e:
-            self.logger.error(f"Fehler beim Ausführen des Trades: {str(e)}")
+            self.logger.error(f"Error executing the trade: {str(e)}")
             return {
                 'success': False,
-                'message': f"Fehler: {str(e)}"
+                'message': f"Error: {str(e)}"
             }
 
     def update_open_trades(self, current_prices: Dict[str, float]) -> List[Dict[str, Any]]:
         """
-        Aktualisiert offene Trades und prüft auf Stop-Loss/Take-Profit
+        Updates open trades and checks for Stop-Loss/Take-Profit
 
         Args:
-            current_prices: Dictionary mit aktuellen Preisen für Symbole
+            current_prices: Dictionary with current prices for symbols
 
         Returns:
-            Liste der geschlossenen Trades
+            List of closed trades
         """
         closed_trades = []
 
-        for trade in list(self.open_trades):  # Liste kopieren, um sicher zu iterieren
+        for trade in list(self.open_trades):  # Copy list to iterate safely
             symbol = trade['symbol']
 
             if symbol not in current_prices:
-                self.logger.warning(f"Kein aktueller Preis für {symbol} verfügbar, Trade bleibt offen")
+                self.logger.warning(f"No current price available for {symbol}, trade remains open")
                 continue
 
             current_price = current_prices[symbol]
@@ -273,7 +273,7 @@ class Trader:
             stop_loss = trade['stop_loss']
             take_profit = trade['take_profit']
 
-            # Gewinn/Verlust berechnen
+            # Calculate profit/loss
             if action == 'buy':
                 profit_loss_pct = (current_price - entry_price) / entry_price * 100
                 close_condition = (current_price <= stop_loss) or (current_price >= take_profit)
@@ -281,39 +281,39 @@ class Trader:
                 profit_loss_pct = (entry_price - current_price) / entry_price * 100
                 close_condition = (current_price >= stop_loss) or (current_price <= take_profit)
 
-            # Trade schließen, wenn Stop-Loss oder Take-Profit erreicht wurde
+            # Close trade if Stop-Loss or Take-Profit has been reached
             if close_condition:
                 reason = 'stop_loss' if (
                         (action == 'buy' and current_price <= stop_loss) or
                         (action == 'sell' and current_price >= stop_loss)
                 ) else 'take_profit'
 
-                # Trade als geschlossen markieren
+                # Mark trade as closed
                 trade['status'] = 'closed'
                 trade['close_price'] = current_price
                 trade['close_time'] = datetime.now().isoformat()
                 trade['profit_loss'] = profit_loss_pct
                 trade['close_reason'] = reason
 
-                # In die Historie verschieben
+                # Move to history
                 self.trade_history.append(trade)
                 self.open_trades.remove(trade)
                 closed_trades.append(trade)
 
-                # Tagesstatistik aktualisieren
+                # Update daily statistics
                 self.daily_stats['profit_loss'] += profit_loss_pct
 
-                self.logger.info(f"Trade geschlossen: {action.upper()} {symbol}, " +
-                                 f"Grund: {reason}, P/L: {profit_loss_pct:.2f}%")
+                self.logger.info(f"Trade closed: {action.upper()} {symbol}, " +
+                                 f"Reason: {reason}, P/L: {profit_loss_pct:.2f}%")
 
-        # Handelshistorie speichern
+        # Save trading history
         if closed_trades:
             self._save_trade_history()
 
         return closed_trades
 
     def _calculate_stop_loss(self, action: str, current_price: float) -> float:
-        """Berechnet den Stop-Loss-Preis"""
+        """Calculates the Stop-Loss price"""
         stop_loss_pct = self.config['stop_loss_pct']
 
         if action == 'buy':
@@ -322,7 +322,7 @@ class Trader:
             return current_price * (1 + stop_loss_pct / 100)
 
     def _calculate_take_profit(self, action: str, current_price: float) -> float:
-        """Berechnet den Take-Profit-Preis"""
+        """Calculates the Take-Profit price"""
         take_profit_pct = self.config['take_profit_pct']
 
         if action == 'buy':
@@ -332,10 +332,10 @@ class Trader:
 
     def get_trading_stats(self) -> Dict[str, Any]:
         """
-        Gibt Handelsstatistiken zurück
+        Returns trading statistics
 
         Returns:
-            Dictionary mit Handelsstatistiken
+            Dictionary with trading statistics
         """
         stats = {
             'open_trades': len(self.open_trades),
@@ -349,14 +349,14 @@ class Trader:
             profitable_trades = sum(1 for trade in self.trade_history if trade.get('profit_loss', 0) > 0)
             stats['win_rate'] = profitable_trades / len(self.trade_history) * 100
 
-            # Gesamtperformance berechnen
+            # Calculate total performance
             total_profit_loss = sum(trade.get('profit_loss', 0) for trade in self.trade_history)
             stats['total_profit_loss'] = total_profit_loss
 
-            # Durchschnittlicher Gewinn/Verlust
+            # Average profit/loss
             stats['avg_profit_loss'] = total_profit_loss / len(self.trade_history)
 
-            # Beste und schlechteste Trades
+            # Best and worst trades
             best_trade = max(self.trade_history, key=lambda x: x.get('profit_loss', 0))
             worst_trade = min(self.trade_history, key=lambda x: x.get('profit_loss', 0))
 
@@ -376,13 +376,13 @@ class Trader:
 
     def update_config(self, new_config: Dict[str, Any]) -> None:
         """
-        Aktualisiert die Trader-Konfiguration
+        Updates the trader configuration
 
         Args:
-            new_config: Neue Konfigurationsparameter
+            new_config: New configuration parameters
         """
 
-        # Rekursive Update-Funktion für verschachtelte Dictionaries
+        # Recursive update function for nested dictionaries
         def recursive_update(d, u):
             for k, v in u.items():
                 if isinstance(v, dict) and k in d and isinstance(d[k], dict):
@@ -391,5 +391,4 @@ class Trader:
                     d[k] = v
 
         recursive_update(self.config, new_config)
-        self.logger.info(f"Trader-Konfiguration aktualisiert")
-
+        self.logger.info(f"Trader Einstellungen aktualisiert {new_config}")

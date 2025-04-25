@@ -15,95 +15,95 @@ class Scheduler:
         self.jobs = {}
 
     def start(self):
-        """Startet den Scheduler"""
+        """Starts the scheduler"""
         if self.running:
-            self.logger.warning("Scheduler läuft bereits")
+            self.logger.warning("Scheduler is already running")
             return
 
         self.running = True
         self.scheduler_thread = threading.Thread(target=self._run_scheduler)
         self.scheduler_thread.daemon = True
         self.scheduler_thread.start()
-        self.logger.info("Scheduler gestartet")
+        self.logger.info("Scheduler started")
 
     def stop(self):
-        """Stoppt den Scheduler"""
+        """Stops the scheduler"""
         if not self.running:
-            self.logger.warning("Scheduler läuft nicht")
+            self.logger.warning("Scheduler is not running")
             return
 
         self.running = False
         if self.scheduler_thread and self.scheduler_thread.is_alive():
             self.scheduler_thread.join(timeout=5.0)
 
-        self.logger.info("Scheduler gestoppt")
+        self.logger.info("Scheduler stopped")
 
     def _run_scheduler(self):
-        """Thread-Funktion für den Scheduler"""
+        """Thread function for the scheduler"""
         while self.running:
             schedule.run_pending()
             time.sleep(1)
 
     def add_job(self, job_id: str, interval: str, job_func: Callable, *args, **kwargs):
         """
-        Fügt einen Job zum Scheduler hinzu
+        Adds a job to the scheduler
 
         Args:
-            job_id: Eindeutige ID für den Job
-            interval: Intervall als String ('1h', '30m', '1d', usw.)
-            job_func: Funktion, die ausgeführt werden soll
-            *args, **kwargs: Argumente für die Funktion
+            job_id: Unique ID for the job
+            interval: Interval as a string ('1h', '30m', '1d', etc.)
+            job_func: Function to be executed
+            *args, **kwargs: Arguments for the function
         """
         if job_id in self.jobs:
-            self.logger.warning(f"Job mit ID {job_id} existiert bereits. Wird überschrieben.")
+            self.logger.warning(f"Job with ID {job_id} already exists. Will be overwritten.")
             self.remove_job(job_id)
 
-        # Intervall parsen
+        # Parse interval
         if interval.endswith('m'):
-            # Minuten
+            # Minutes
             minutes = int(interval[:-1])
             job = schedule.every(minutes).minutes.do(job_func, *args, **kwargs)
         elif interval.endswith('h'):
-            # Stunden
+            # Hours
             hours = int(interval[:-1])
             job = schedule.every(hours).hours.do(job_func, *args, **kwargs)
         elif interval.endswith('d'):
-            # Tage
+            # Days
             days = int(interval[:-1])
             job = schedule.every(days).days.do(job_func, *args, **kwargs)
         else:
-            # Standardmäßig als Stunden interpretieren
+            # Default interpret as hours
             hours = int(interval)
             job = schedule.every(hours).hours.do(job_func, *args, **kwargs)
 
         self.jobs[job_id] = job
-        self.logger.info(f"Job {job_id} mit Intervall {interval} hinzugefügt")
+        self.logger.info(f"Job {job_id} with interval {interval} added")
 
     def remove_job(self, job_id: str) -> bool:
         """
-        Entfernt einen Job aus dem Scheduler
+        Removes a job from the scheduler
 
         Args:
-            job_id: ID des zu entfernenden Jobs
+            job_id: ID of the job to be removed
 
         Returns:
-            True, wenn der Job entfernt wurde, sonst False
+            True if the job was removed, otherwise False
         """
         if job_id in self.jobs:
             schedule.cancel_job(self.jobs[job_id])
             del self.jobs[job_id]
-            self.logger.info(f"Job {job_id} entfernt")
+            self.logger.info(f"Job {job_id} removed")
             return True
         else:
-            self.logger.warning(f"Job {job_id} existiert nicht")
+            self.logger.warning(f"Job {job_id} does not exist")
             return False
 
     def get_jobs(self) -> List[Dict[str, Any]]:
         """
-        Gibt eine Liste aller aktiven Jobs zurück
+        Returns a list of all active jobs
 
         Returns:
-            Liste mit Job-Informationen
+            List with job information
         """
         job_list = []
         for job_id, job in self.jobs.items():
@@ -111,7 +111,7 @@ class Scheduler:
             if next_run:
                 next_run_str = next_run.strftime('%Y-%m-%d %H:%M:%S')
             else:
-                next_run_str = 'Nicht geplant'
+                next_run_str = 'Not scheduled'
 
             job_list.append({
                 'id': job_id,
@@ -121,5 +121,3 @@ class Scheduler:
             })
 
         return job_list
-
-

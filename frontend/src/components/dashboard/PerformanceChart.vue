@@ -35,12 +35,10 @@ export default {
 
       const ctx = this.$refs.chartCanvas.getContext('2d');
 
-      // Zerstöre das vorherige Chart-Objekt, wenn es existiert
       if (this.chart) {
         this.chart.destroy();
       }
 
-      // Erzeuge Labels für die letzten 30 Tage
       const labels = [];
       const today = new Date();
       for (let i = 30; i >= 0; i--) {
@@ -49,11 +47,10 @@ export default {
         labels.push(date.toLocaleDateString());
       }
 
-      // Chart-Optionen verbessern und Fehlerquellen beheben
       const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false, // Animation deaktivieren, um Fehler zu vermeiden
+        animation: false,
         interaction: {
           mode: 'nearest',
           intersect: false,
@@ -76,7 +73,7 @@ export default {
             }
           },
           filler: {
-            propagate: false // Wichtig, um Fehler mit fill zu vermeiden
+            propagate: false
           }
         },
         scales: {
@@ -99,7 +96,6 @@ export default {
         }
       };
 
-      // Chart erstellen
       this.chart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -131,7 +127,6 @@ export default {
     }
   },
   beforeUnmount() {
-    // Chart-Instanz aufräumen
     if (this.chart) {
       this.chart.destroy();
       this.chart = null;

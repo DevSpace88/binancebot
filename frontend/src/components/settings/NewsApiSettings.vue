@@ -53,12 +53,10 @@ export default {
     };
   },
   methods: {
-    // Änderungen an Parent weitergeben
     emitChanges() {
       this.$emit('change-news-api', { ...this.localSettings });
     },
 
-    // Lokale Einstellungen aus Props aktualisieren
     updateFromProps() {
       this.localSettings = {
         news_api_key: this.newsSettings.news_api_key || '',

@@ -8,18 +8,9 @@ from typing import Dict, Any, List, Optional
 import uvicorn
 import logging
 import os
-import json
 from datetime import datetime, timedelta
-import time
-
-# Lokale Module importieren
-from model import PredictionModel
-from data_collector import DataCollector
-from trader import Trader
-from scheduler import Scheduler
 
 
-# Pydantic-Modelle für API-Requests/Responses
 class PredictionRequest(BaseModel):
     symbol: str
     timeframe: str = Field(default="1h", description="Timeframe for prediction (e.g. '1h', '4h', '1d')")
@@ -84,20 +75,18 @@ class JobRequest(BaseModel):
         return v
 
 
-# Neues Modell für das Modelltraining
 class TrainModelRequest(BaseModel):
     symbol: str
     data_points: int = Field(default=2000, ge=100, le=10000, description="Anzahl der Datenpunkte (Stunden) für Training")
 
 
-# API-Klasse
 class TradeBotAPI:
     def __init__(self, model, data_collector, trader, scheduler, parent_app=None):
         self.app = FastAPI(title="TradeBot API",
                            description="API für den prädiktiven Handelsbot",
                            version="1.0.0")
 
-        # Komponenten speichern
+
         self.app.parent_app = parent_app
         self.model = model
         self.data_collector = data_collector
@@ -105,13 +94,13 @@ class TradeBotAPI:
         self.scheduler = scheduler
         self.logger = logging.getLogger('API')
 
-        # CORS konfigurieren - in Produktion einschränken!
+
         origins = [
             "http://localhost:8080",
             "http://127.0.0.1:8080",
             "http://localhost:8000",
             "http://127.0.0.1:8000",
-            # Weitere erlaubte Origins hier hinzufügen
+
         ]
 
         self.app.add_middleware(
@@ -122,7 +111,7 @@ class TradeBotAPI:
             allow_headers=["*"],
         )
 
-        # Exception Handler für generelle Fehlerbehandlung
+
         @self.app.exception_handler(Exception)
         async def general_exception_handler(request: Request, exc: Exception):
             self.logger.error(f"Unbehandelte Ausnahme: {str(exc)}")
@@ -131,20 +120,17 @@ class TradeBotAPI:
                 content={"detail": f"Interner Serverfehler: {str(exc)}"}
             )
 
-        # Routen registrieren
         self._setup_routes()
 
-        # Statische Dateien einbinden
         if os.path.exists('frontend/dist'):
             self.app.mount("/static", StaticFiles(directory="frontend/dist/static"), name="static")
             self.app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
     def _setup_routes(self):
-        """Richtet die API-Routen ein"""
+        """api routes"""
 
         @self.app.get("/api/status")
         async def get_status():
-            """Gibt den aktuellen Status des Bots zurück"""
             try:
                 return {
                     "status": "running",
@@ -160,45 +146,35 @@ class TradeBotAPI:
 
         @self.app.post("/api/predict", response_model=PredictionResponse)
         async def predict(request: PredictionRequest):
-            """Führt eine Prognose für ein Symbol durch"""
             try:
-                # Daten sammeln
                 features = self.data_collector.prepare_features(request.symbol)
 
-                # Debug-Informationen
                 self.logger.info(
                     f"Prepared features for {request.symbol}: Shape: {features.shape if features is not None and not features.empty else 'Empty'}")
 
                 if features is None or features.empty:
                     raise HTTPException(status_code=400, detail=f"Keine Daten für {request.symbol} verfügbar")
 
-                # Debugging-Ausgabe, um zu prüfen, welche Spalten verfügbar sind
                 self.logger.info(f"Available columns: {features.columns.tolist()}")
 
-                # Stellen wir sicher, dass 'close' in den Spalten ist
                 if 'close' not in features.columns:
-                    # Wenn 'Close' vorhanden, aber nicht 'close', konvertieren (yfinance liefert Großbuchstaben)
                     if 'Close' in features.columns:
                         features['close'] = features['Close']
                     else:
-                        # Wenn keine close-Spalte vorhanden, generieren wir eine aus zufälligen Daten
                         self.logger.warning(f"'close' column missing in features, generating synthetic data")
                         import numpy as np
-                        start_price = 100.0  # Default-Startpreis
+                        start_price = 100.0
 
-                        # Wenn 'open' verfügbar ist, verwenden wir das als Basis
                         if 'open' in features.columns:
                             start_price = features['open'].iloc[-1]
 
-                        # Generiere synthetische close-Preise
+
                         features['close'] = np.linspace(start_price, start_price * 1.01, len(features))
 
-                # Vorhersage machen - mit besserem Error-Handling
                 try:
                     prediction = self.model.predict(features)
                 except Exception as model_error:
                     self.logger.error(f"Fehler im Modell: {str(model_error)}")
-                    # Versuche eine einfache Vorhersage zu erstellen
                     current_price = features['close'].iloc[-1]
                     import random
                     direction = random.choice(['up', 'down'])
@@ -218,7 +194,6 @@ class TradeBotAPI:
                 if 'error' in prediction:
                     raise HTTPException(status_code=500, detail=prediction['error'])
 
-                # Response erweitern
                 prediction['symbol'] = request.symbol
 
                 return prediction
@@ -231,14 +206,12 @@ class TradeBotAPI:
 
         @self.app.post("/api/trade")
         async def execute_trade(request: TradeRequest):
-            """Führt einen Trade manuell aus"""
+            """manual trade"""
             try:
-                # Aktuelle Daten holen
                 features = self.data_collector.prepare_features(request.symbol)
                 if features is None or features.empty:
                     raise HTTPException(status_code=400, detail=f"Keine Daten für {request.symbol} verfügbar")
 
-                # Dummy-Vorhersage erstellen für manuellen Trade
                 current_price = features['close'].iloc[-1]
                 prediction = {
                     'current': current_price,
@@ -250,7 +223,6 @@ class TradeBotAPI:
                     'timestamp': datetime.now().isoformat()
                 }
 
-                # Trade ausführen
                 result = self.trader.process_prediction(request.symbol, prediction)
 
                 return result
@@ -263,7 +235,6 @@ class TradeBotAPI:
 
         @self.app.get("/api/trades")
         async def get_trades(status: str = Query(None, description="Filter nach Status ('open', 'closed', 'all')")):
-            """Gibt die Trades zurück"""
             try:
                 if status == 'open' or status is None:
                     return {'trades': self.trader.open_trades}
@@ -280,29 +251,23 @@ class TradeBotAPI:
 
         @self.app.get("/api/stats")
         async def get_stats():
-            """Gibt Handelsstatistiken zurück"""
             try:
                 return self.trader.get_trading_stats()
             except Exception as e:
                 self.logger.error(f"Fehler beim Abrufen der Statistiken: {str(e)}")
                 raise HTTPException(status_code=500, detail=str(e))
 
-        # In der _setup_routes-Methode von api.py, aktualisiere die update_config-Funktion wie folgt:
-
         @self.app.post("/api/config")
         async def update_config(request: ConfigUpdateRequest):
-            """Aktualisiert die Konfiguration"""
             try:
                 if request.section == 'model':
                     self.model.update_config(request.config)
                 elif request.section == 'trader':
                     self.trader.update_config(request.config)
                 elif request.section == 'global':
-                    # Globale Konfiguration betrifft alle Komponenten
                     if 'trading_enabled' in request.config:
                         self.trader.config['trading_enabled'] = request.config['trading_enabled']
 
-                    # API-Keys aktualisieren
                     if 'api_keys' in request.config:
                         if 'news_api' in request.config['api_keys']:
                             if not hasattr(self.data_collector, 'api_keys'):
@@ -314,7 +279,6 @@ class TradeBotAPI:
                 else:
                     raise HTTPException(status_code=400, detail=f"Unbekannte Konfigurationssektion: {request.section}")
 
-                # Konfiguration speichern
                 if hasattr(self.app, 'parent_app') and hasattr(self.app.parent_app, 'save_config'):
                     self.app.parent_app.save_config()
 
@@ -328,17 +292,14 @@ class TradeBotAPI:
 
         @self.app.get("/api/config")
         async def get_config(section: str = Query(None)):
-            """Gibt die aktuelle Konfiguration zurück"""
             try:
                 if section == 'model':
                     return {'config': self.model.config}
                 elif section == 'trader':
                     return {'config': self.trader.config}
                 else:
-                    # Zusätzliche API-Keys in der Antwort einschließen
                     api_keys = {}
                     if hasattr(self.data_collector, 'api_keys'):
-                        # Keine Secrets in der Antwort senden
                         if 'news_api' in self.data_collector.api_keys:
                             api_keys['news_api'] = self.data_collector.api_keys['news_api']
 
@@ -353,28 +314,23 @@ class TradeBotAPI:
 
         @self.app.post("/api/jobs")
         async def add_job(request: JobRequest):
-            """Fügt einen Prognose- und Handelsjob hinzu"""
             try:
                 job_id = f"predict_{request.symbol}_{request.interval}"
 
-                # Job-Funktion
                 def prediction_job(symbol=request.symbol):
                     try:
                         self.logger.info(f"Führe Vorhersagejob für {symbol} aus")
-                        # Daten sammeln
                         features = self.data_collector.prepare_features(symbol)
                         if features is None or features.empty:
                             self.logger.error(f"Keine Daten für {symbol} verfügbar")
                             return
 
-                        # Vorhersage machen
                         prediction = self.model.predict(features)
 
                         if 'error' in prediction:
                             self.logger.error(f"Fehler bei Vorhersage: {prediction['error']}")
                             return
 
-                        # Handelsentscheidung treffen
                         trade_result = self.trader.process_prediction(symbol, prediction)
 
                         self.logger.info(f"Vorhersagejob für {symbol} abgeschlossen: {trade_result['action']}")
@@ -382,7 +338,6 @@ class TradeBotAPI:
                     except Exception as e:
                         self.logger.error(f"Fehler im Vorhersagejob: {str(e)}")
 
-                # Job hinzufügen
                 self.scheduler.add_job(job_id, request.interval, prediction_job)
 
                 return {
@@ -396,7 +351,6 @@ class TradeBotAPI:
 
         @self.app.delete("/api/jobs/{job_id}")
         async def remove_job(job_id: str):
-            """Entfernt einen Job"""
             try:
                 if self.scheduler.remove_job(job_id):
                     return {"message": f"Job {job_id} entfernt"}
@@ -410,7 +364,6 @@ class TradeBotAPI:
 
         @self.app.get("/api/jobs")
         async def get_jobs():
-            """Gibt alle aktiven Jobs zurück"""
             try:
                 return {"jobs": self.scheduler.get_jobs()}
             except Exception as e:
@@ -419,14 +372,11 @@ class TradeBotAPI:
 
         @self.app.post("/api/train")
         async def train_model(request: TrainModelRequest):
-            """Trainiert das Modell mit historischen Daten für ein Symbol"""
             try:
                 self.logger.info(f"Starte Modelltraining für {request.symbol}")
 
-                # Mehr historische Daten für das Training sammeln
                 features = self.data_collector.get_market_data(request.symbol, limit=request.data_points)
 
-                # Füge detaillierte Debug-Informationen hinzu
                 self.logger.info(
                     f"Erhaltene Daten: Shape: {features.shape if hasattr(features, 'shape') else 'Kein DataFrame'}")
                 self.logger.info(f"Datentyp: {type(features)}")
@@ -437,7 +387,6 @@ class TradeBotAPI:
                 self.logger.info(
                     f"Spalten im DataFrame: {features.columns.tolist() if hasattr(features, 'columns') else 'Keine Spalten'}")
 
-                # Prüfe, ob 'close' oder 'Close' in den Spalten vorhanden ist
                 if 'close' not in features.columns and 'Close' in features.columns:
                     self.logger.info("Konvertiere 'Close' zu 'close'")
                     features['close'] = features['Close']
@@ -447,7 +396,6 @@ class TradeBotAPI:
                     raise HTTPException(status_code=400,
                                         detail=f"Spalte 'close' fehlt in den Daten. Verfügbare Spalten: {available_cols}")
 
-                # Technische Indikatoren hinzufügen
                 try:
                     features['rsi'] = self.data_collector._calculate_rsi(features['close'])
                     features['macd'], features['macd_signal'] = self.data_collector._calculate_macd(features['close'])
@@ -456,7 +404,6 @@ class TradeBotAPI:
                     features['ema_long'] = features['close'].ewm(span=50).mean()
                     features['volatility'] = features['close'].rolling(window=24).std()
 
-                    # Sentiment-Daten hinzufügen (Dummy-Werte für historische Daten)
                     import numpy as np
                     features['sentiment'] = np.random.uniform(-0.5, 0.5, size=len(features))
                 except Exception as e:
@@ -464,13 +411,11 @@ class TradeBotAPI:
                     raise HTTPException(status_code=500,
                                         detail=f"Fehler beim Berechnen der technischen Indikatoren: {str(e)}")
 
-                # Behandle Null-Werte
                 features_clean = features.dropna()
                 if features_clean.empty:
                     raise HTTPException(status_code=400,
                                         detail="Nach Entfernen von Null-Werten sind keine Daten mehr übrig")
 
-                # Modell trainieren
                 try:
                     self.model.train(features_clean)
                 except Exception as e:
@@ -495,8 +440,7 @@ class TradeBotAPI:
                 raise HTTPException(status_code=500, detail=str(e))
 
     def run(self, host="0.0.0.0", port=8000):
-        """Startet den API-Server"""
-        # Konfiguriere uvicorn für bessere Fehlerbehandlung
+        """Start API-Server"""
         log_config = {
             "version": 1,
             "disable_existing_loggers": False,

@@ -1,113 +1,97 @@
 # TradeBot
 
-TradeBot ist ein konfigurierbarer Handelsbot mit prädiktivem Modell und Web-Frontend für die automatisierte Analyse und den Handel von Kryptowährungen und anderen Finanzinstrumenten.
+TradeBot is a configurable trading bot with a predictive model and web frontend for automated analysis and trading of cryptocurrencies and other financial instruments.
 
-## Funktionen
+## Features
 
-- 🤖 **Prädiktives Modell**: Verwendet maschinelles Lernen, um zukünftige Preisbewegungen vorherzusagen
-- 📊 **Datenanalyse**: Sammelt und analysiert Marktdaten von verschiedenen APIs
-- 🚀 **Automatisierter Handel**: Führt automatisch Trades basierend auf Vorhersagen durch
-- 📱 **Modernes Web-Frontend**: Benutzerfreundliche Oberfläche zur Überwachung und Steuerung des Bots
-- ⏱️ **Job-Scheduler**: Plant und steuert regelmäßige Prognose- und Handelsjobs
-- 🔧 **Umfangreiche Konfiguration**: Anpassbare Parameter für Modell, Handel und Risikomanagement
-- 📝 **Handelshistorie**: Speichert und zeigt vergangene Trades und Performance
+- 🤖 **Predictive Model**: Uses machine learning to predict future price movements
+- 📊 **Data Analysis**: Collects and analyzes market data from various APIs
+- 🚀 **Automated Trading**: Automatically executes trades based on predictions
+- 📱 **Modern Web Frontend**: User-friendly interface for monitoring and controlling the bot
+- ⏱️ **Job Scheduler**: Plans and controls regular prediction and trading jobs
+- 🔧 **Extensive Configuration**: Customizable parameters for model, trading, and risk management
+- 📝 **Trading History**: Stores and displays past trades and performance
 
-## Systemanforderungen
+## System Requirements
 
-- Python 3.8 oder höher
-- Node.js 14 oder höher
-- npm 6 oder höher
-- Optional: Docker für Container-Deployment
+- Python 3.8 or higher
+- Node.js 14 or higher
+- npm 6 or higher
+- Optional: Docker for container deployment
 
 ## Installation
 
 ### Backend
 
-1. Ins Backend-Verzeichnis wechseln:
+1. Navigate to the backend directory:
    ```
    cd backend
    ```
 
-2. Python-Abhängigkeiten installieren:
+2. Install Python dependencies:
    ```
    pip install -r requirements.txt
    ```
 
-   Wenn keine `requirements.txt` vorhanden ist, installiere die folgenden Pakete:
+   If there is no `requirements.txt`, install the following packages:
    ```
    pip install fastapi uvicorn pandas numpy scikit-learn joblib schedule requests yfinance
    ```
 
 ### Frontend
 
-1. Ins Frontend-Verzeichnis wechseln:
+1. Navigate to the frontend directory:
    ```
    cd frontend
    ```
 
-2. Node-Abhängigkeiten installieren:
+2. Install Node dependencies:
    ```
    npm install
    ```
 
-3. Frontend für Produktion bauen:
+3. Build frontend for production:
    ```
    npm run build
    ```
 
+## Starting TradeBot
 
-
-## Starten des TradeBot
-
-### Alles in einem Schritt (Entwicklung)
+### All in one step (Development)
 
 ```bash
 cd backend
 python start.py --config config.json --port 8000
 ```
 
-Optional: Starte das Frontend separat im Entwicklungsmodus:
+Optional: Start the frontend separately in development mode:
 ```bash
 cd frontend
 npm run serve
 ```
 
-### Produktionsumgebung
+## Using Docker
 
-1. Frontend bauen:
-   ```bash
-   cd frontend
-   npm run build
-   ```
-
-2. Backend mit der Konfigurationsdatei starten:
-   ```bash
-   cd backend
-   python start.py --config config.json
-   ```
-
-## Docker verwenden
-
-Es empfiehlt sich auch lokal einfach Docker zu verwenden:
+It's recommended to use Docker since it's easier:
 
 ```
 docker-compose up
 ```
 
-## Konfiguration
+## Configuration
 
-Die Konfigurationsdatei ist im JSON-Format und enthält folgende Abschnitte:
+The configuration file is in JSON format and contains the following sections:
 
-### Beispiel-Konfiguration `config.json`:
+### Example Configuration `config.json`:
 
 ```json
 {
   "api_keys": {
     "binance": {
-      "api_key": "DEIN_API_KEY",
-      "api_secret": "DEIN_API_SECRET"
+      "api_key": "YOUR_API_KEY",
+      "api_secret": "YOUR_API_SECRET"
     },
-    "news_api": "DEIN_NEWS_API_KEY"
+    "news_api": "YOUR_NEWS_API_KEY"
   },
   "model": {
     "model_type": "random_forest",
@@ -119,8 +103,8 @@ Die Konfigurationsdatei ist im JSON-Format und enthält folgende Abschnitte:
     "trading_enabled": false,
     "exchanges": {
       "binance": {
-        "api_key": "DEIN_API_KEY",
-        "api_secret": "DEIN_API_SECRET",
+        "api_key": "YOUR_API_KEY",
+        "api_secret": "YOUR_API_SECRET",
         "test_mode": true
       }
     },
@@ -142,214 +126,174 @@ Die Konfigurationsdatei ist im JSON-Format und enthält folgende Abschnitte:
 }
 ```
 
-### Konfigurationsparameter
+### Configuration Parameters
 
-#### Modell-Konfiguration
-- `model_type`: Typ des prädiktiven Modells ("random_forest", "gradient_boosting", "linear")
-- `features`: Liste der zu verwendenden Features für das Modell
-- `target`: Zielwert für die Vorhersage (in der Regel "close")
-- `prediction_horizon`: Zeithorizont für die Vorhersage in Stunden
+#### Model Configuration
+- `model_type`: Type of predictive model ("random_forest", "gradient_boosting", "linear")
+- `features`: List of features to use for the model
+- `target`: Target value for prediction (typically "close")
+- `prediction_horizon`: Time horizon for prediction in hours
 
-#### Trader-Konfiguration
-- `trading_enabled`: Aktiviert oder deaktiviert den tatsächlichen Handel (false für Paper-Trading)
-- `exchanges`: Konfiguration für verschiedene Börsen (wie Binance)
-- `trade_amount`: Standardbetrag pro Trade in der Basiswährung
-- `max_trades_per_day`: Maximale Anzahl von Trades pro Tag
-- `stop_loss_pct`: Stop-Loss in Prozent vom Einstiegspreis
-- `take_profit_pct`: Take-Profit in Prozent vom Einstiegspreis
-- `confidence_threshold`: Mindestvertrauen für Trades (0-1)
-- `min_change_pct`: Mindestpreisänderung für Trades in Prozent
-- `risk_management`: Parameter für das Risikomanagement
+#### Trader Configuration
+- `trading_enabled`: Enables or disables actual trading (false for paper-trading)
+- `exchanges`: Configuration for different exchanges (such as Binance)
+- `trade_amount`: Default amount per trade in the base currency
+- `max_trades_per_day`: Maximum number of trades per day
+- `stop_loss_pct`: Stop loss in percentage from entry price
+- `take_profit_pct`: Take profit in percentage from entry price
+- `confidence_threshold`: Minimum confidence for trades (0-1)
+- `min_change_pct`: Minimum price change for trades in percentage
+- `risk_management`: Parameters for risk management
 
-#### API-Konfiguration
-- `host`: Hostname für den API-Server
-- `port`: Port für den API-Server
+#### API Configuration
+- `host`: Hostname for the API server
+- `port`: Port for the API server
 
-## Verwendung des Web-Frontends
+## Using the Web Frontend
 
-Nach dem Start des TradeBot kann auf das Web-Frontend über einen Browser zugegriffen werden:
+After starting TradeBot, the web frontend can be accessed via a browser:
 
 ```
 http://localhost:8000
 ```
 
-Die Benutzeroberfläche besteht aus fünf Hauptbereichen:
+The user interface consists of five main areas:
 
 ### Dashboard
-Zeigt eine Übersicht der wichtigsten Kennzahlen:
-- Anzahl der offenen Trades
-- Anzahl der Trades heute
-- Gewinn/Verlust heute
-- Gewinnrate
-- Performance-Diagramm
-- Aktive Symbole
+Shows an overview of the key metrics:
+- Number of open trades
+- Number of trades today
+- Profit/loss today
+- Win rate
+- Performance chart
+- Active symbols
 
-### Prognosen
-Hier können manuelle Prognosen für beliebige Symbole erstellt werden:
-1. Symbol eingeben (z.B. "BTC-USDT")
-2. Zeitrahmen auswählen
-3. "Prognose erstellen" klicken
-4. Die Ergebnisse werden angezeigt und können optional in einen Trade umgesetzt werden
+### Predictions
+Here you can create manual predictions for any symbol (Model is always only trained on one symbol!):
+1. Enter a symbol (e.g., "BTC-USDT")
+2. Select a timeframe
+3. Click "Create prediction"
+4. The results will be displayed and can optionally be implemented as a trade
 
 ### Trades
-Zeigt alle offenen und geschlossenen Trades an:
-- Offene Trades: Aktuelle Trades mit Stop-Loss und Take-Profit
-- Geschlossene Trades: Vergangene Trades mit Gewinn/Verlust und Schließungsgrund
+Shows all open and closed trades:
+- Open trades: Current trades with stop-loss and take-profit
+- Closed trades: Past trades with profit/loss and closing reason
 
 ### Jobs
-Ermöglicht das Erstellen und Verwalten von automatisierten Prognose- und Handelsjobs:
-1. Symbol eingeben
-2. Intervall auswählen (15m, 30m, 1h, 4h, 1d)
-3. "Job hinzufügen" klicken
-4. Der Job wird regelmäßig ausgeführt und führt bei entsprechenden Signalen automatisch Trades durch
+Allows creating and managing automated prediction and trading jobs:
+1. Enter a symbol
+2. Select an interval (15m, 30m, 1h, 4h, 1d)
+3. Click "Add job"
+4. The job will run regularly and automatically execute trades when signals are appropriate
 
-### Einstellungen
-Erlaubt die Anpassung aller Konfigurationsparameter:
-- Allgemeine Einstellungen: Trading aktivieren/deaktivieren, maximale Anzahl von Trades, Betrag pro Trade
-- Risikomanagement: Stop-Loss, Take-Profit, maximales Risiko pro Trade
-- Modelleinstellungen: Modelltyp, Prognosehorizont, Vertrauensschwelle
-- API-Schlüssel: Zugangsdaten für Börsen
+### Settings
+Allows adjustment of all configuration parameters:
+- General settings: Enable/disable trading, maximum number of trades, amount per trade
+- Risk management: Stop-loss, take-profit, maximum risk per trade
+- Model settings: Model type, prediction horizon, confidence threshold
+- API keys: Access data for exchanges
 
-## API-Endpunkte
+## API Endpoints
 
-TradeBot bietet eine RESTful API, die zur Programmierung eigener Clients oder zur Integration in andere Systeme genutzt werden kann:
+TradeBot offers a RESTful API that can be used to program your own clients or integrate into other systems:
 
-| Endpunkt | Methode | Beschreibung |
+| Endpoint | Method | Description |
 |----------|---------|--------------|
-| `/api/status` | GET | Gibt den aktuellen Status des Bots zurück |
-| `/api/predict` | POST | Führt eine Prognose für ein Symbol durch |
-| `/api/trade` | POST | Führt einen manuellen Trade aus |
-| `/api/trades` | GET | Gibt die Trades zurück (offene, geschlossene oder alle) |
-| `/api/stats` | GET | Gibt Handelsstatistiken zurück |
-| `/api/config` | POST | Aktualisiert die Konfiguration |
-| `/api/config` | GET | Gibt die aktuelle Konfiguration zurück |
-| `/api/jobs` | POST | Fügt einen Prognose- und Handelsjob hinzu |
-| `/api/jobs/{job_id}` | DELETE | Entfernt einen Job |
-| `/api/jobs` | GET | Gibt alle aktiven Jobs zurück |
-| `/api/train` | POST | Trainiert das Modell mit historischen Daten für ein Symbol |
+| `/api/status` | GET | Returns the current status of the bot |
+| `/api/predict` | POST | Performs a prediction for a symbol |
+| `/api/trade` | POST | Executes a manual trade |
+| `/api/trades` | GET | Returns trades (open, closed, or all) |
+| `/api/stats` | GET | Returns trading statistics |
+| `/api/config` | POST | Updates the configuration |
+| `/api/config` | GET | Returns the current configuration |
+| `/api/jobs` | POST | Adds a prediction and trading job |
+| `/api/jobs/{job_id}` | DELETE | Removes a job |
+| `/api/jobs` | GET | Returns all active jobs |
+| `/api/train` | POST | Trains the model with historical data for a symbol |
 
-## Trainieren des Modells
+## Training the Model
 
-Vor der Verwendung des TradeBot für reale Trades wird empfohlen, das prädiktive Modell zu trainieren:
+Before using TradeBot for real trades, it is recommended to train the predictive model:
 
-1. Über die API (empfohlen):
+1. Via the API (recommended):
    ```
    curl -X POST -H "Content-Type: application/json" -d '{"symbol":"BTC-USDT"}' http://localhost:8000/api/train
    ```
 
-2. Alternativ kann das Modell auch manuell trainiert werden:
+2. Alternatively, the model can be trained manually:
    ```python
    from model import PredictionModel
    from data_collector import DataCollector
 
-   # Marktdaten sammeln
+   # Collect market data
    collector = DataCollector()
    data = collector.get_market_data("BTC-USDT", limit=2000)
 
-   # Technische Indikatoren berechnen
+   # Calculate technical indicators
    data['rsi'] = collector._calculate_rsi(data['close'])
    data['macd'], data['macd_signal'] = collector._calculate_macd(data['close'])
    data['ema_short'] = data['close'].ewm(span=12).mean()
    data['ema_medium'] = data['close'].ewm(span=26).mean()
    data['volatility'] = data['close'].rolling(window=24).std()
 
-   # Modell initialisieren und trainieren
+   # Initialize and train model
    model = PredictionModel()
    model.train(data.dropna())
    ```
 
 ## Paper-Trading vs. Live-Trading
 
-TradeBot unterstützt zwei Trading-Modi:
+TradeBot supports two trading modes:
 
-1. **Paper-Trading (Simulationsmodus)**:
-   - Standard-Einstellung (`trading_enabled: false`)
-   - Alle Funktionen sind verfügbar, aber keine echten Trades werden ausgeführt
-   - Ideal zum Testen von Strategien ohne finanzielles Risiko
+1. **Paper-Trading (Simulation Mode)**:
+   - Default setting (`trading_enabled: false`)
+   - All features are available, but no real trades are executed
+   - Ideal for testing strategies without financial risk
 
 2. **Live-Trading**:
-   - Aktivierbar über Einstellungen (`trading_enabled: true`)
-   - Führt echte Trades auf der konfigurierten Börse durch
-   - Erfordert gültige API-Schlüssel
-   - ACHTUNG: Verwendet echtes Geld!
+   - Can be activated in settings (`trading_enabled: true`)
+   - Executes real trades on the configured exchange
+   - Requires valid API keys
+   - WARNING: Uses real money!
 
-## Risikomanagement
+## Risk Management
 
-TradeBot verfügt über mehrere Funktionen zur Risikominimierung:
+TradeBot has several features to minimize risk:
 
-- **Stop-Loss**: Automatischer Verkauf, wenn der Preis unter einen bestimmten Wert fällt
-- **Take-Profit**: Automatischer Verkauf, wenn der Preis einen bestimmten Wert erreicht
-- **Maximales Risiko pro Trade**: Begrenzt den Verlust pro Trade
-- **Tägliches Drawdown-Limit**: Stoppt den Handel, wenn die täglichen Verluste einen bestimmten Wert überschreiten
-- **Vertrauensschwelle**: Minimale Konfidenz für Trades
-- **Mindestpreisänderung**: Minimale prognostizierte Preisänderung für Trades
+- **Stop-Loss**: Automatic selling when the price falls below a certain value
+- **Take-Profit**: Automatic selling when the price reaches a certain value
+- **Maximum Risk per Trade**: Limits the loss per trade
+- **Daily Drawdown Limit**: Stops trading when daily losses exceed a certain value
+- **Confidence Threshold**: Minimum confidence for trades
+- **Minimum Price Change**: Minimum predicted price change for trades
 
-## Architektur
+## Architecture
 
-TradeBot besteht aus mehreren Hauptmodulen:
+TradeBot consists of several main modules:
 
-1. **data_collector.py**: Sammelt Marktdaten von verschiedenen APIs
-2. **model.py**: Implementiert das prädiktive Modell
-3. **trader.py**: Führt Handelslogik basierend auf Vorhersagen aus
-4. **scheduler.py**: Plant und steuert stündliche Jobs
-5. **api.py**: RESTful API für Frontend-Kommunikation
-6. **app.py**: Hauptanwendung, die alle Komponenten zusammenführt
-7. **frontend/**: Web-Frontend zur Steuerung und Überwachung
+1. **data_collector.py**: Collects market data from various APIs
+2. **model.py**: Implements the predictive model
+3. **trader.py**: Executes trading logic based on predictions
+4. **scheduler.py**: Plans and controls hourly jobs
+5. **api.py**: RESTful API for frontend communication
+6. **app.py**: Main application that combines all components
+7. **frontend/**: Web frontend for control and monitoring
 
-## Sicherheit und Risiken
+## Security and Risks
 
-**WARNUNG**: Trading-Bots können zu finanziellen Verlusten führen. Verwende sie mit Vorsicht und stelle sicher, dass du die Risiken verstehst.
+**WARNING**: Trading bots can lead to financial losses. Use them with caution and make sure you understand the risks.
 
-- Speichere API-Schlüssel sicher und teile sie niemandem mit
-- Beginne mit Paper-Trading, um die Bot-Funktionen zu verstehen
-- Verwende beim Übergang zum Live-Trading zunächst kleine Beträge
-- Überwache die Bot-Aktivitäten regelmäßig
-- Setze immer Stop-Loss-Limits, um potenzielle Verluste zu begrenzen
+- This bot is just a demo, it shouldn't be used for trading at all
+- Do not deploy this, this isn't safe!
+- Store API keys securely and do not share them with anyone
+- Start with paper-trading to understand the bot functions
+- When transitioning to live-trading, start with small amounts, if you really have to and know what you're doing
+- Monitor bot activities regularly
+- Always set stop-loss limits to limit potential losses
 
-## Fehlersuche
 
-### Bekannte Probleme und Lösungen
 
-1. **Problem**: Bot kann keine Verbindung zur Börsen-API herstellen
-   **Lösung**: Überprüfe deine API-Schlüssel und Internetverbindung
+### Log Files
 
-2. **Problem**: Prognosen werden nicht erstellt
-   **Lösung**: Stelle sicher, dass die Datenquellen verfügbar sind und das Modell trainiert wurde
-
-3. **Problem**: Rekursionsfehler in den Einstellungs-Komponenten
-   **Lösung**: Dies ist ein bekanntes Problem in den Vue-Komponenten. Die Lösung besteht darin, die Watchers und Event-Emitter zu überarbeiten, um Endlosschleifen zu vermeiden.
-
-4. **Problem**: Fehlermeldung "Maximum recursive updates exceeded in component <SettingsPage>"
-   **Lösung**: Verwende die korrigierten Komponenten für die Einstellungsseite, die die bidirektionale Bindung richtig handhaben.
-
-5. **Problem**: Frontend lädt nicht
-   **Lösung**: Stelle sicher, dass das Frontend gebaut wurde und die Dateien im richtigen Verzeichnis liegen
-
-### Logdateien
-
-TradeBot schreibt detaillierte Logs in die Datei `tradebot.log`. Bei Problemen können diese Logs wertvolle Hinweise liefern.
-
-## Beitragen
-
-Beiträge zum Projekt sind willkommen! Um beizutragen:
-
-1. Fork das Repository
-2. Erstelle einen Feature-Branch (`git checkout -b feature/amazing-feature`)
-3. Committe deine Änderungen (`git commit -m 'Add amazing feature'`)
-4. Push zum Branch (`git push origin feature/amazing-feature`)
-5. Öffne einen Pull Request
-
-## Lizenz
-
-Dieses Projekt steht unter einer offenen Lizenz - siehe die LICENSE-Datei für Details.
-
-## Anpassungen und Erweiterungen
-
-TradeBot kann an deine spezifischen Bedürfnisse angepasst werden:
-
-- **Unterstützung für weitere Börsen**: Implementiere Adapter für andere Handelsplattformen
-- **Zusätzliche technische Indikatoren**: Erweitere die Sammlung von Features für das prädiktive Modell
-- **Alternative ML-Modelle**: Implementiere weitere Algorithmen wie neuronale Netze
-- **Erweiterte Benachrichtigungen**: Füge E-Mail- oder SMS-Benachrichtigungen hinzu
-- **Backtesting-Funktionalität**: Teste Strategien mit historischen Daten
-- **Portfolio-Management**: Optimiere die Allokation über mehrere Vermögenswerte hinweg
+TradeBot writes detailed logs to the file `tradebot.log`. These logs can provide valuable information when problems occur.
